@@ -1,9 +1,11 @@
 module Main where
 import System.Environment
 import Parser
+import Value (showValue)
 import Primitives
-import Eval (showValue, eval)
+import Eval (eval)
 import Control.Monad
+import Error
 
 main :: IO ()
 main =

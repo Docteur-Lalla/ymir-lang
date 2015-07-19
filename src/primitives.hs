@@ -1,7 +1,7 @@
 module Primitives where
 import Value
+import Error
 import Control.Monad.Error
-import Text.ParserCombinators.Parsec (ParseError)
 
 primitives :: [(String, [YmirValue] -> ThrowsError YmirValue)]
 primitives =
@@ -18,7 +18,18 @@ primitives =
     ("number?", numberType),
     ("bool?", boolType),
     ("char?", charType),
-    ("type", showType)
+    ("type", showType),
+    ("=", numBoolBinop(==)),
+    ("<", numBoolBinop(<)),
+    (">", numBoolBinop(>)),
+    ("/=", numBoolBinop(/=)),
+    (">=", numBoolBinop(>=)),
+    ("<=", numBoolBinop(<=)),
+    ("and", boolBoolBinop(&&)),
+    ("or", boolBoolBinop(||)),
+    ("car", car),
+    ("cdr", cdr),
+    ("cons", cons)
   ]
 
 numBinop :: (Integer -> Integer -> Integer) -> [YmirValue] -> ThrowsError YmirValue
@@ -63,21 +74,38 @@ showType [(Number _)] = return $ String "number"
 showType [(Bool _)] = return $ String "bool"
 showType _ = return $ String "unknown"
 
-data YmirError = NumArgs Integer [YmirValue]
-  | TypeMismatch String YmirValue
-  | Parser ParseError
-  | BadSpecialForm String YmirValue
-  | NotFunction String String
-  | UnboundVariable String String
-  | Default String
+boolBinop :: (YmirValue -> ThrowsError a) -> (a -> a -> Bool) -> [YmirValue] -> ThrowsError YmirValue
+boolBinop unpacker op args
+  | length args /= 2 = throwError (NumArgs 2 args)
+  | otherwise =
+    do
+      left <- unpacker $ args !! 0
+      right <- unpacker $ args !! 1
+      return $ Bool (left `op` right)
 
-instance Error YmirError where
-  noMsg = Default "An error has occured"
-  strMsg = Default
+numBoolBinop = boolBinop unpackNum
+boolBoolBinop = boolBinop unpackBool
 
-type ThrowsError = Either YmirError
+unpackBool :: YmirValue -> ThrowsError Bool
+unpackBool (Bool b) = return b
+unpackBool notBool = throwError (TypeMismatch "bool" notBool)
 
-trapError action = catchError action (return . show)
+car :: [YmirValue] -> ThrowsError YmirValue
+car [List (x:xs)] = return x
+car [DottedList (x:xs) _] = return x
+car [badArg] = throwError (TypeMismatch "pair" badArg)
+car badArgList = throwError (NumArgs 1 badArgList)
 
-extractValue :: ThrowsError a -> a
-extractValue (Right val) = val
+cdr :: [YmirValue] -> ThrowsError YmirValue
+cdr [List (x:xs)] = return (List xs)
+cdr [DottedList (_:xs) x] = return (DottedList xs x)
+cdr [DottedList [xs] x] = return x
+cdr [badArg] = throwError (TypeMismatch "pair" badArg)
+cdr badArgList = throwError (NumArgs 1 badArgList)
+
+cons :: [YmirValue] -> ThrowsError YmirValue
+cons [x1, List []] = return (List [x1])
+cons [x, List xs] = return (List $ [x] ++ xs)
+cons [x, DottedList xs xlast] = return (DottedList ([x] ++ xs) xlast)
+cons [x1, x2] = return (DottedList [x1] x2)
+cons badArgList = throwError (NumArgs 2 badArgList)

@@ -1,6 +1,7 @@
 module Parser (readExpr) where
 import Value
 import Eval 
+import Error
 import Primitives
 import Control.Monad
 import Control.Monad.Error
