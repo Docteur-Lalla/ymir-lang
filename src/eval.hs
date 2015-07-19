@@ -11,8 +11,19 @@ eval env val@(Char _) = return val
 eval env val@(Number _) = return val
 eval env val@(Bool _) = return val
 eval env (Atom id) = getVar env id
+eval env (List [Atom "if", pred, true, false]) =
+  do
+    result <- eval env pred
+    case result of
+      Bool False -> eval env false
+      otherwise -> eval env true
 eval env (List [Atom "require", String file]) =
   require file >>= liftM last . mapM (eval env)
+eval env (List (Atom "apply":f:args)) =
+  do
+    func <- eval env f
+    argVals <- mapM (eval env) args
+    applyProc (func:argVals)
 eval env (List [Atom "define", Atom var, form]) = eval env form >>= defineVar env var
 eval env (List [Atom "quote", val]) = return val
 eval env (List (Atom "define":List (Atom var:params):body)) = function
