@@ -1,6 +1,9 @@
 module Parser (readExpr) where
 import Value
+import Eval 
+import Primitives
 import Control.Monad
+import Control.Monad.Error
 import Text.ParserCombinators.Parsec hiding (spaces)
 
 spaces :: Parser ()
@@ -75,16 +78,15 @@ parseExpr =
   parseAtom
   <|> parseString
   <|> parseNumber
-  <|> parseChar
-  <|> parseQuoted
+  <|> ((try parseChar) <|> parseQuoted)
   <|> do
     char '('
     x <- (try parseList) <|> parseDottedList
     char ')'
     return x
 
-readExpr :: String -> String
+readExpr :: String -> ThrowsError YmirValue
 readExpr input =
   case parse parseExpr "ymir" input of
-    Left err -> "No match: " ++ show err
-    Right val -> "Found value"
+    Left err -> throwError $ Parser err
+    Right val -> return val
