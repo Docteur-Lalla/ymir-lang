@@ -3,20 +3,6 @@ import Value
 import Control.Monad.Error
 import Text.ParserCombinators.Parsec (ParseError)
 
-data YmirError = NumArgs Integer [YmirValue]
-  | TypeMismatch String YmirValue
-  | Parser ParseError
-  | BadSpecialForm String YmirValue
-  | NotFunction String String
-  | UnboundVariable String String
-  | Default String
-
-instance Error YmirError where
-  noMsg = Default "An error has occured"
-  strMsg = Default
-
-type ThrowsError = Either YmirError
-
 trapError action = catchError action (return . show)
 
 extractValue :: ThrowsError a -> a

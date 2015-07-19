@@ -4,8 +4,6 @@ import Error
 import Control.Monad.Error
 import Data.IORef
 
-type Env = IORef [(String, IORef YmirValue)]
-
 nullEnv :: IO Env
 nullEnv = newIORef []
 

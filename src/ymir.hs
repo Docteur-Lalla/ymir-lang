@@ -1,7 +1,7 @@
 module Main where
 import System.Environment
 import Parser
-import Value (showValue)
+import Value
 import Primitives
 import Eval (eval)
 import Control.Monad
@@ -32,10 +32,10 @@ until_ pred prompt action =
       else action result >> until_ pred prompt action
 
 runOne :: String -> IO ()
-runOne expr = nullEnv >>= flip evalAndPrint expr
+runOne expr = primitiveBindings >>= flip evalAndPrint expr
 
 runRepl :: IO ()
-runRepl = nullEnv >>= until_ (== "exit") (readPrompt "ymir: ") . evalAndPrint
+runRepl = primitiveBindings >>= until_ (== "exit") (readPrompt "ymir: ") . evalAndPrint
 
 main :: IO ()
 main =

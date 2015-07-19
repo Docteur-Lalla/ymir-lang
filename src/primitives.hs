@@ -1,6 +1,7 @@
 module Primitives where
 import Value
 import Error
+import Variable
 import Control.Monad.Error
 
 primitives :: [(String, [YmirValue] -> ThrowsError YmirValue)]
@@ -31,6 +32,11 @@ primitives =
     ("cdr", cdr),
     ("cons", cons)
   ]
+
+primitiveBindings :: IO Env
+primitiveBindings = nullEnv >>= (flip bindVars $ map makePrimitiveFunc primitives)
+  
+  where makePrimitiveFunc (var, func) = (var, Primitive func)
 
 numBinop :: (Integer -> Integer -> Integer) -> [YmirValue] -> ThrowsError YmirValue
 numBinop op singleVal@[_] = throwError (NumArgs 2 singleVal)
