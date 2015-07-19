@@ -7,8 +7,6 @@ import Data.IORef
 nullEnv :: IO Env
 nullEnv = newIORef []
 
-type IOThrowsError = ErrorT YmirError IO
-
 liftThrows :: ThrowsError a -> IOThrowsError a
 liftThrows (Left err) = throwError err
 liftThrows (Right val) = return val

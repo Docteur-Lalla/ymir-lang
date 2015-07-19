@@ -18,6 +18,7 @@ instance Error YmirError where
   strMsg = Default
 
 type ThrowsError = Either YmirError
+type IOThrowsError = ErrorT YmirError IO
 
 data YmirValue = Atom String
   | List [YmirValue]

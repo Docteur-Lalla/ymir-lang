@@ -2,7 +2,10 @@ module Primitives where
 import Value
 import Error
 import Variable
+import Parser
 import Control.Monad.Error
+import System.IO
+import Parser
 
 primitives :: [(String, [YmirValue] -> ThrowsError YmirValue)]
 primitives =
@@ -34,9 +37,10 @@ primitives =
   ]
 
 primitiveBindings :: IO Env
-primitiveBindings = nullEnv >>= (flip bindVars $ map makePrimitiveFunc primitives)
+primitiveBindings = nullEnv >>= (flip bindVars $ map makeFunc primitives)
   
-  where makePrimitiveFunc (var, func) = (var, Primitive func)
+  where
+    makeFunc (var, func) = (var, Primitive func)
 
 numBinop :: (Integer -> Integer -> Integer) -> [YmirValue] -> ThrowsError YmirValue
 numBinop op singleVal@[_] = throwError (NumArgs 2 singleVal)
@@ -115,3 +119,6 @@ cons [x, List xs] = return (List $ [x] ++ xs)
 cons [x, DottedList xs xlast] = return (DottedList ([x] ++ xs) xlast)
 cons [x1, x2] = return (DottedList [x1] x2)
 cons badArgList = throwError (NumArgs 2 badArgList)
+
+require :: String -> IOThrowsError [YmirValue]
+require filename = (liftIO $ readFile filename) >>= liftThrows . readExprList

@@ -11,6 +11,8 @@ eval env val@(Char _) = return val
 eval env val@(Number _) = return val
 eval env val@(Bool _) = return val
 eval env (Atom id) = getVar env id
+eval env (List [Atom "require", String file]) =
+  require file >>= liftM last . mapM (eval env)
 eval env (List [Atom "define", Atom var, form]) = eval env form >>= defineVar env var
 eval env (List [Atom "quote", val]) = return val
 eval env (List (Atom "define":List (Atom var:params):body)) = function
@@ -35,6 +37,10 @@ makeFunc varargs env params body = return $ Closure pnames varargs body env
 
 makeNormalFunc = makeFunc Nothing
 makeVarargs = makeFunc . Just . showValue
+
+applyProc :: [YmirValue] -> IOThrowsError YmirValue
+applyProc [f, List args] = apply f args
+applyProc (f:args) = apply f args
 
 apply :: YmirValue -> [YmirValue] -> IOThrowsError YmirValue
 apply (Primitive f) args = liftThrows $ f args

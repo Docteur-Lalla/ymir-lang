@@ -1,8 +1,6 @@
-module Parser (readExpr) where
+module Parser (readExpr, readExprList) where
 import Value
-import Eval 
 import Error
-import Primitives
 import Control.Monad
 import Control.Monad.Error
 import Text.ParserCombinators.Parsec hiding (spaces)
@@ -86,8 +84,12 @@ parseExpr =
     char ')'
     return x
 
+readOrThrow :: Parser a -> String -> ThrowsError a
+readOrThrow parser input = case parse parser "ymir" input of
+  Left err -> throwError $ Parser err
+  Right val -> return val
+
 readExpr :: String -> ThrowsError YmirValue
-readExpr input =
-  case parse parseExpr "ymir" input of
-    Left err -> throwError $ Parser err
-    Right val -> return val
+readExpr = readOrThrow parseExpr
+
+readExprList = readOrThrow (endBy parseExpr spaces)
