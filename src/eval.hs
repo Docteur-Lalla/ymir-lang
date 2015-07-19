@@ -5,7 +5,6 @@ import Control.Monad.Error
 import Primitives
 
 eval :: YmirValue -> ThrowsError YmirValue
-eval val@(Atom _) = return val
 eval val@(String _) = return val
 eval val@(Char _) = return val
 eval val@(Number _) = return val
