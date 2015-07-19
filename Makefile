@@ -1,4 +1,4 @@
-SRC=src/value.hs src/error.hs src/primitives.hs src/eval.hs src/parser.hs src/ymir.hs
+SRC=src/value.hs src/error.hs src/variable.hs src/primitives.hs src/eval.hs src/parser.hs src/ymir.hs
 DST=bin/ymir
 
 $(DST): $(SRC)
