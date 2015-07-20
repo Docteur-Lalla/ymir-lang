@@ -1,0 +1,108 @@
+(define nil '())
+
+(define (not x)
+  (if x
+    false
+    true))
+
+(define (list . objs)
+  objs)
+
+(define (id obj)
+  obj)
+
+(define (null? li)
+  (eqv? li nil))
+
+(define (flip f)
+  (lambda (arg1 arg2)
+    (f arg2 arg1)))
+
+(define (curry f arg1)
+  (lambda (arg)
+    (apply f arg1 arg)))
+
+(define (compose f g)
+  (lambda (arg)
+    (f (apply g arg))))
+
+(define zero?
+  (curry = 0))
+
+(define positive?
+  (curry < 0))
+
+(define negative?
+  (curry > 0))
+
+(define (odd? num)
+  (= (% num 2) 1))
+
+(define even?
+  (compose not odd?))
+
+(define (foldl f acc li)
+  (if (null? li)
+    acc
+    (foldl f (f acc (car li)) (cdr li))))
+
+(define (foldr f end li)
+  (if (null? li)
+    end
+    (f (car li) (foldr f end (cdr li)))))
+
+(define fold foldl)
+(define reduce fold)
+
+(define (reverse li)
+  (fold (flip cons) nil li))
+
+(define (map f li)
+  (foldr
+    (lambda (x y) (cons (f x) y))
+    '()
+    li))
+
+(define (filter pred li)
+  (foldr
+    (lambda (x y)
+      (if (pred x)
+        (cons x y)
+        y))
+    '()
+    li))
+
+(define (sum . li)
+  (fold + 0 li))
+
+(define (product . li)
+  (fold * 1 li))
+
+(define (any? pred . li)
+  (apply (lambda li (fold or false li)) (map pred li)))
+
+(define (every? pred . li)
+  (apply (lambda li (fold and true li)) (map pred li)))
+
+(define fst car)
+(define (snd li) (car (cdr li)))
+
+(define ($$let-lambdas li body)
+    (if (eqv? li '())
+        body
+        (list 'lambda (list (car li))
+          ($$let-lambdas (cdr li) body))))
+
+(define ($$let-arguments lbds args)
+    (if (eqv? args '())
+        lbds
+        (list 'apply
+          ($$let-arguments lbds (cdr args))
+          (list 'list (car args)))))
+
+(define (let pairs body)
+    (eval
+      ($$let-arguments
+        ($$let-lambdas (map fst pairs) body)
+        (map snd (reverse pairs)))
+      '()))
