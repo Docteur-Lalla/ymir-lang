@@ -4,6 +4,9 @@ import Error
 import Control.Monad.Error
 import Primitives
 import Variable
+import System.Environment
+import System.Directory
+import System.FilePath
 
 eval :: Env -> YmirValue -> IOThrowsError YmirValue
 eval env val@(String _) = return val
@@ -17,8 +20,17 @@ eval env (List [Atom "if", pred, true, false]) =
     case result of
       Bool False -> eval env false
       otherwise -> eval env true
-eval env (List [Atom "require", String file]) =
-  require file >>= liftM last . mapM (eval env)
+eval env (List [Atom "require", String file]) = requireFile env False (libdir file) file'
+  where
+    libdir dir =
+      case (takeDirectory dir) of
+        "." -> "/home/chem/prgm/ymir/lib"
+        d -> "/home/chem/prgm/ymir/lib/" ++ d
+    file' = takeFileName file
+eval env (List [Atom "require-relative", String file]) = requireFile env True dir file'
+  where
+    dir = takeDirectory file
+    file' = takeFileName file
 eval env (List (Atom "apply":f:args)) =
   do
     func <- eval env f
@@ -69,3 +81,31 @@ apply (Closure params varargs body env) args =
     bindVarArgs arg env = case arg of
       Just argName -> liftIO $ bindVars env [(argName, List $ remainingArgs)]
       Nothing -> return env
+
+requireFile env relative dir file =
+  do
+    file' <- getCurrentFile env
+    dir' <- getCurrentDir env
+    setCurrentFile env (String file)
+    if relative
+      then setCurrentDir env (String $ normalise (dirstr dir' ++ "/" ++ dir))
+      else setCurrentDir env (String $ normalise dir)
+    cdir <- getCurrentDir env
+    res <- ((require (dirstr cdir) file) >>= ($!) (liftM last . mapM (eval env)))
+    setCurrentFile env file'
+    setCurrentDir env dir'
+    return res
+  where
+    dirstr (String s) = s        
+
+getCurrentFile :: Env -> IOThrowsError YmirValue
+getCurrentFile env = getVar env "@@file"
+
+getCurrentDir :: Env -> IOThrowsError YmirValue
+getCurrentDir env = getVar env "@@dir"
+
+setCurrentFile :: Env -> YmirValue -> IOThrowsError YmirValue
+setCurrentFile env s = setVar env "@@file" s
+
+setCurrentDir :: Env -> YmirValue -> IOThrowsError YmirValue
+setCurrentDir env s = setVar env "@@dir" s

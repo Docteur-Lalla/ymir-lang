@@ -8,6 +8,8 @@ import Control.Monad
 import Error
 import System.IO hiding (try)
 import Variable
+import System.FilePath
+import System.Directory (getCurrentDirectory)
 
 flushStr :: String -> IO ()
 flushStr str = putStr str >> hFlush stdout
@@ -34,18 +36,24 @@ until_ pred prompt action =
 runOne :: [String] -> IO ()
 runOne args =
   do
-    env <- primitiveBindings >>= flip bindVars [("args", List list)]
+    dir <- getCurrentDirectory
+    env <- primitiveBindings >>= flip bindVars (binds dir)
     (runIOThrows $ liftM show $ res env) >>= hPutStrLn stderr
 
   where
+    binds dir = [("args", List list), ("@@file", String ""), ("@@dir", String dir)]
     list = map String $ drop 1 args
-    res env = eval env (List [Atom "require", String (args !! 0)])
+    res env = eval env (List [Atom "require-relative", String (args !! 0)])
 
 runRepl :: IO ()
 runRepl =
   do
-    bindings <- primitiveBindings
+    dir <- getCurrentDirectory
+    bindings <- primitiveBindings >>= flip bindVars [atatfile, ("@@dir", String dir)]
     (until_ (== "exit") (readPrompt "ymir: ") . evalAndPrint) bindings
+
+  where
+    atatfile = ("@@file", String "")
 
 main :: IO ()
 main =

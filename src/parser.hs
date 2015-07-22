@@ -84,12 +84,12 @@ parseExpr =
     char ')'
     return x
 
-readOrThrow :: Parser a -> String -> ThrowsError a
-readOrThrow parser input = case parse parser "ymir" input of
+readOrThrow :: String -> Parser a -> String -> ThrowsError a
+readOrThrow filename parser input = case parse parser filename input of
   Left err -> throwError $ Parser err
   Right val -> return val
 
 readExpr :: String -> ThrowsError YmirValue
-readExpr = readOrThrow parseExpr
+readExpr = readOrThrow "ymir" parseExpr
 
-readExprList = readOrThrow (endBy parseExpr spaces)
+readExprList filename = readOrThrow filename (endBy parseExpr spaces)

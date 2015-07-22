@@ -6,6 +6,8 @@ import Parser
 import Control.Monad.Error
 import System.IO
 import Parser
+import System.Directory
+import System.FilePath
 
 primitives :: [(String, [YmirValue] -> ThrowsError YmirValue)]
 primitives =
@@ -102,19 +104,22 @@ unpackBool (Bool b) = return b
 unpackBool notBool = throwError (TypeMismatch "bool" notBool)
 
 car :: [YmirValue] -> ThrowsError YmirValue
+car [String (x:xs)] = return (Char x)
 car [List (x:xs)] = return x
 car [DottedList (x:xs) _] = return x
 car [badArg] = throwError (TypeMismatch "pair" badArg)
 car badArgList = throwError (NumArgs 1 badArgList)
 
 cdr :: [YmirValue] -> ThrowsError YmirValue
+cdr [String (x:xs)] = return (String xs)
 cdr [List (x:xs)] = return (List xs)
-cdr [DottedList (_:xs) x] = return (DottedList xs x)
 cdr [DottedList [xs] x] = return x
+cdr [DottedList (_:xs) x] = return (DottedList xs x)
 cdr [badArg] = throwError (TypeMismatch "pair" badArg)
 cdr badArgList = throwError (NumArgs 1 badArgList)
 
 cons :: [YmirValue] -> ThrowsError YmirValue
+cons [Char c, String s] = return (String (c:s))
 cons [x1, List []] = return (List [x1])
 cons [x, List xs] = return (List $ [x] ++ xs)
 cons [x, DottedList xs xlast] = return (DottedList ([x] ++ xs) xlast)
@@ -142,5 +147,9 @@ eqv [(List arg1), (List arg2)] = return $ Bool (len && values)
 eqv [_, _] = return $ Bool False
 eqv badArgList = throwError (NumArgs 2 badArgList)
 
-require :: String -> IOThrowsError [YmirValue]
-require filename = (liftIO $ readFile filename) >>= liftThrows . readExprList
+require :: String -> String -> IOThrowsError [YmirValue]
+require dir filename = (liftIO $ readFile filename') >>= (liftThrows . readExprList filename)
+  where
+    filename' = case dir of
+      "." -> filename
+      _ -> normalise (dir ++ "/" ++ filename)
