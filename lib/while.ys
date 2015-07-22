@@ -1,0 +1,11 @@
+(require "atom.ys")
+
+(define (do . instrs)
+  (car (reverse instrs)))
+
+(define (while cond body)
+  (if (eval cond)
+    (do
+      (eval body)
+      (while cond body))
+    '()))    

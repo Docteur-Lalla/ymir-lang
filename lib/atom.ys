@@ -12,7 +12,9 @@
   obj)
 
 (define (null? li)
-  (eqv? li nil))
+  (if (string? li)
+    (eqv? li "")
+    (eqv? li nil)))
 
 (define (flip f)
   (lambda (arg1 arg2)

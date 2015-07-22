@@ -36,6 +36,7 @@ eval env (List (Atom "apply":f:args)) =
     func <- eval env f
     argVals <- mapM (eval env) args
     applyProc (func:argVals)
+eval env (List [Atom "set!", Atom var, form]) = eval env form >>= setVar env var
 eval env (List (Atom "eval":list:env')) = eval env list >>= eval env
 eval env (List [Atom "define", Atom var, form]) = eval env form >>= defineVar env var
 eval env (List [Atom "quote", val]) = return val
