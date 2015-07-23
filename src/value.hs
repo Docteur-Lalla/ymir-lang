@@ -23,7 +23,7 @@ type IOThrowsError = ErrorT YmirError IO
 data YmirValue = Atom String
   | List [YmirValue]
   | DottedList [YmirValue] YmirValue
-  | Number Integer
+  | Number Int
   | Char Char
   | String String
   | Bool Bool

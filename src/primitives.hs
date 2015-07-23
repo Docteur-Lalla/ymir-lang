@@ -45,11 +45,11 @@ primitiveBindings = nullEnv >>= (flip bindVars $ map makeFunc primitives)
   where
     makeFunc (var, func) = (var, Primitive func)
 
-numBinop :: (Integer -> Integer -> Integer) -> [YmirValue] -> ThrowsError YmirValue
+numBinop :: (Int -> Int -> Int) -> [YmirValue] -> ThrowsError YmirValue
 numBinop op singleVal@[_] = throwError (NumArgs 2 singleVal)
 numBinop op params = mapM unpackNum params >>= return . Number . foldl1 op
 
-unpackNum :: YmirValue -> ThrowsError Integer
+unpackNum :: YmirValue -> ThrowsError Int
 unpackNum (Number n) = return n
 unpackNum (List [n]) = unpackNum n
 unpackNum (String s) =
