@@ -7,6 +7,9 @@ import Variable
 import System.Environment
 import System.Directory
 import System.FilePath
+import System.IO.Unsafe
+import FFI
+import Data.IORef
 
 eval :: Env -> YmirValue -> IOThrowsError YmirValue
 eval env val@(String _) = return val
@@ -31,6 +34,8 @@ eval env (List [Atom "require-relative", String file]) = requireFile env True di
   where
     dir = takeDirectory file
     file' = takeFileName file
+eval env (List [Atom "load", String mod, List syms]) = loadModule env False mod syms
+eval env (List [Atom "load-relative", String mod, List syms]) = loadModule env True mod syms
 eval env (List (Atom "apply":f:args)) =
   do
     func <- eval env f
@@ -98,6 +103,26 @@ requireFile env relative dir file =
     return res
   where
     dirstr (String s) = s        
+
+loadModule env relative mod syms =
+  do
+    primitives <- if relative
+      then liftIO $ loadCModule ("./" ++ mod) symbols
+      else liftIO $ loadCModule (dir ++ mod) symbols
+    let bindings = zipWith (\a -> \b -> (a, Primitive b)) symbols primitives
+    liftIO $
+      do
+        env' <- bindVars env bindings
+        list <- readIORef env'
+        writeIORef env list
+    getVar env (last symbols)
+
+  where
+    dir = "/home/chem/prgm/ymir/lib/"
+    symbols = getSymbols syms
+    getSymbols [] = []
+    getSymbols (Atom x:xs) = x : getSymbols xs
+    getSymbols (_:xs) = getSymbols xs
 
 getCurrentFile :: Env -> IOThrowsError YmirValue
 getCurrentFile env = getVar env "@@file"

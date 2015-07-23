@@ -38,7 +38,8 @@ runOne args =
   do
     dir <- getCurrentDirectory
     env <- primitiveBindings >>= flip bindVars (binds dir)
-    (runIOThrows $ liftM show $ res env) >>= hPutStrLn stderr
+    (runIOThrows $ liftM show $ res env) -- >>= hPutStrLn stderr
+    return ()
 
   where
     binds dir = [("args", List list), ("@@file", String ""), ("@@dir", String dir)]
