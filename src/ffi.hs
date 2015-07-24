@@ -7,6 +7,7 @@ import Foreign.Marshal.Array
 import Foreign.Marshal.Utils
 import System.IO.Unsafe
 import System.Posix.DynamicLinker
+import Control.Monad.Error
 
 type ValuePtr = StablePtr YmirValue
 type ReturnValuePtr = StablePtr (ThrowsError YmirValue)
@@ -95,6 +96,21 @@ ymir_getString ptr = unsafePerformIO $
       String s -> newCString s
       otherwise -> newCString ""
 
+-- Error handling functions
+ymir_throwNumberArguments :: Int -> Ptr ValuePtr -> Int -> ReturnValuePtr
+ymir_throwNumberArguments num ary size = unsafePerformIO $
+  do
+    ptrlist <- peekArray size ary
+    list <- mapM deRefStablePtr ptrlist
+    newStablePtr (throwError (NumArgs (toInteger num) list))
+
+ymir_throwTypeMismatch :: CString -> ValuePtr -> ReturnValuePtr
+ymir_throwTypeMismatch str ptr = unsafePerformIO $
+  do
+    val <- deRefStablePtr ptr
+    s <- peekCString str
+    newStablePtr (throwError (TypeMismatch s val))
+
 -- Make a plain Haskell/Ymir primitive from the module and symbol name
 makeYmirPrimitive :: String -> String -> [YmirValue] -> ThrowsError YmirValue
 makeYmirPrimitive mod sym args = unsafePerformIO $
@@ -130,6 +146,9 @@ foreign export ccall ymir_getNumber :: ValuePtr -> Int
 foreign export ccall ymir_getChar :: ValuePtr -> Char
 foreign export ccall ymir_getBool :: ValuePtr -> Bool
 foreign export ccall ymir_getString :: ValuePtr -> CString
+
+foreign export ccall ymir_throwNumberArguments :: Int -> Ptr ValuePtr -> Int -> ReturnValuePtr
+foreign export ccall ymir_throwTypeMismatch :: CString -> ValuePtr -> ReturnValuePtr
 
 foreign import ccall "dynamic" makeYmirCFunction :: FunPtr YmirCFunction -> YmirCFunction
 
