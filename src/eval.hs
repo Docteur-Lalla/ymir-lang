@@ -104,24 +104,42 @@ requireFile env relative dir file =
   where
     dirstr (String s) = s        
 
+generateBindings :: [(String, [String])] -> [(String, YmirValue)] -> [(String, YmirValue)]
+generateBindings assoc [] = []
+generateBindings assoc (b@(sym, proc):xs) =
+  let maybeNames = lookup sym assoc in
+    case maybeNames of
+      Nothing -> b : generateBindings assoc xs
+      Just names -> map (\name -> (name, proc)) names ++ generateBindings assoc xs
+
+generateNames [] = []
+generateNames (Atom n:xs) = generateNames xs
+generateNames (List (Atom sym:names):xs) = (sym, map toString names) : generateNames xs
+  where
+    toString (Atom a) = a
+    toString _ = ""
+generateNames _ = []
+
 loadModule env relative mod syms =
   do
     primitives <- if relative
       then liftIO $ loadCModule ("./" ++ mod) symbols
       else liftIO $ loadCModule (dir ++ mod) symbols
-    let bindings = zipWith (\a -> \b -> (a, Primitive b)) symbols primitives
+    let pairs = zipWith (\a -> \b -> (a, Primitive b)) symbols primitives
+    let bindings = generateBindings (generateNames syms) pairs
     liftIO $
       do
         env' <- bindVars env bindings
         list <- readIORef env'
         writeIORef env list
-    getVar env (last symbols)
+    getVar env (fst (last bindings))
 
   where
     dir = "/home/chem/prgm/ymir/lib/"
     symbols = getSymbols syms
     getSymbols [] = []
     getSymbols (Atom x:xs) = x : getSymbols xs
+    getSymbols (List (Atom x:_):xs) = x : getSymbols xs
     getSymbols (_:xs) = getSymbols xs
 
 getCurrentFile :: Env -> IOThrowsError YmirValue

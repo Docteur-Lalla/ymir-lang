@@ -1,4 +1,5 @@
 module Value where
+import Foreign.Ptr
 import Data.IORef
 import Control.Monad.Error
 import Text.ParserCombinators.Parsec (ParseError)
@@ -27,6 +28,7 @@ data YmirValue = Atom String
   | Char Char
   | String String
   | Bool Bool
+  | Pointer (Ptr ())
   | Primitive ([YmirValue] -> ThrowsError YmirValue)
   | Closure
   {
@@ -45,6 +47,7 @@ showValue (Bool True) = "true"
 showValue (Bool False) = "false"
 showValue (List li) = "(" ++ unwordsList li ++ ")"
 showValue (DottedList h t) = "(" ++ unwordsList h ++ " . " ++ showValue t ++ ")"
+showValue (Pointer ptr) = "<pointer " ++ show ptr ++ ">"
 showValue (Primitive _) = "<primitive>"
 showValue (Closure {params = args, vararg = varargs, body = body, closure = env}) =
   "(lambda (" ++ unwords (map show args) ++

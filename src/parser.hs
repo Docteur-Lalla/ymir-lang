@@ -9,7 +9,7 @@ spaces :: Parser ()
 spaces = skipMany1 space
 
 symbol :: Parser Char
-symbol = oneOf "!$%&|*+-/;<=?>@^_~#"
+symbol = oneOf ":!$%&|*+-/;<=?>@^_~#"
 
 parseEscape :: Bool -> Parser Char
 parseEscape str =

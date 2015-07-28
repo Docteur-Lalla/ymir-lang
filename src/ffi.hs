@@ -26,6 +26,7 @@ ymir_newList ary len = unsafePerformIO $
     ptrlist <- peekArray len ary
     list <- mapM deRefStablePtr ptrlist
     newStablePtr (List list)
+ymir_newPointer ptr = unsafePerformIO $ newStablePtr (Pointer ptr)
 
 -- Function return function
 ymir_return :: ValuePtr -> ReturnValuePtr
@@ -66,6 +67,12 @@ ymir_isList ptr = unsafePerformIO $
       List _ -> return True
       String _ -> return True -- String are [Char]
       otherwise -> return False
+ymir_isPointer ptr = unsafePerformIO $
+  do
+    val <- deRefStablePtr ptr
+    case val of
+      Pointer _ -> return True
+      otherwise -> return False
 
 -- Getters
 ymir_getNumber ptr = unsafePerformIO $
@@ -95,6 +102,13 @@ ymir_getString ptr = unsafePerformIO $
     case val of
       String s -> newCString s
       otherwise -> newCString ""
+
+ymir_getPointer ptr = unsafePerformIO $
+  do
+    val <- deRefStablePtr ptr
+    case val of
+      Pointer ptr -> return ptr
+      otherwise -> return nullPtr
 
 -- Error handling functions
 ymir_throwNumberArguments :: Int -> Ptr ValuePtr -> Int -> ReturnValuePtr
@@ -133,6 +147,7 @@ foreign export ccall ymir_newChar :: Char -> ValuePtr
 foreign export ccall ymir_newBool :: Bool -> ValuePtr
 foreign export ccall ymir_newString :: CString -> ValuePtr
 foreign export ccall ymir_newList :: Ptr ValuePtr -> Int -> ValuePtr
+foreign export ccall ymir_newPointer :: Ptr () -> ValuePtr
 
 foreign export ccall ymir_return :: ValuePtr -> ReturnValuePtr
 
@@ -141,11 +156,13 @@ foreign export ccall ymir_isChar :: ValuePtr -> Bool
 foreign export ccall ymir_isBool :: ValuePtr -> Bool
 foreign export ccall ymir_isString :: ValuePtr -> Bool
 foreign export ccall ymir_isList :: ValuePtr -> Bool
+foreign export ccall ymir_isPointer :: ValuePtr -> Bool
 
 foreign export ccall ymir_getNumber :: ValuePtr -> Int
 foreign export ccall ymir_getChar :: ValuePtr -> Char
 foreign export ccall ymir_getBool :: ValuePtr -> Bool
 foreign export ccall ymir_getString :: ValuePtr -> CString
+foreign export ccall ymir_getPointer :: ValuePtr -> Ptr ()
 
 foreign export ccall ymir_throwNumberArguments :: Int -> Ptr ValuePtr -> Int -> ReturnValuePtr
 foreign export ccall ymir_throwTypeMismatch :: CString -> ValuePtr -> ReturnValuePtr
