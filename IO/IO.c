@@ -158,7 +158,7 @@ HsStablePtr input_string(HsPtr* ptr, int size)
 
   char* line = readline(stdin);
   HsStablePtr ret = ymir_newString(line);
-  // free(line);
+  free(line);
 
   return ymir_return(ret);
 }
