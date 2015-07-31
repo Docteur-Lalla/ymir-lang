@@ -57,16 +57,38 @@ eval env (List (Atom "lambda":varargs@(Atom _):body)) = lambda
 eval env (List (f:args)) =
   do
     func <- eval env f
-    argVals <- mapM (eval env) args
-    apply func argVals
+    case func of
+      Closure params varargs body ctx ->
+        do
+          argVals <- mapM (computeArg env) zipped
+          varArgVals <- mapM (computeArg env) $ zippedVarArgs varargs
+          apply func (argVals ++ varArgVals)
+
+        where
+          computeArg env ((_, True), value) = eval env (List [Atom "quote", value])
+          computeArg env ((_, False), value) = eval env value
+
+          zipped = zip params (take (length params) args)
+          varArgs Nothing = []
+          varArgs (Just _) = drop (length params) args
+          zippedVarArgs Nothing = []
+          zippedVarArgs (Just (name, b)) = map (\var -> ((name, b), var)) (varArgs varargs)
+      otherwise ->
+        do
+          argVals <- mapM (eval env) args
+          apply func argVals
 eval env badForm = throwError (BadSpecialForm "Unrecognized special form" badForm)
+
+makeArgument env (Atom name) = (name, False)
+makeArgument env (List [Atom "quote", Atom name]) = (name, True)
+makeArgument env value = ("", False)
 
 makeFunc varargs env params body = return $ Closure pnames varargs body env
 
-  where pnames = map showValue params
+  where pnames = map (makeArgument env) params
 
 makeNormalFunc = makeFunc Nothing
-makeVarargs = makeFunc . Just . showValue
+makeVarargs varargs env = makeFunc (Just $ makeArgument env varargs) env
 
 applyProc :: [YmirValue] -> IOThrowsError YmirValue
 applyProc [f, List args] = apply f args
@@ -74,13 +96,17 @@ applyProc (f:args) = apply f args
 
 apply :: YmirValue -> [YmirValue] -> IOThrowsError YmirValue
 apply (Primitive f) args = liftThrows $ f args
-apply (Closure params varargs body env) args =
+apply (Closure paramPair varargPair body env) args =
   if num params /= num args && varargs == Nothing
     then throwError $ NumArgs (num params) args
     else (liftIO $ bindVars env $ zip params args) >>=
       bindVarArgs varargs >>= evalBody
 
   where
+    params = map fst paramPair
+    varargs = makeVarargs varargPair
+    makeVarargs Nothing = Nothing
+    makeVarargs (Just (name, b)) = Just name
     remainingArgs = drop (length params) args
     num = toInteger . length
     evalBody env = liftM last $ mapM (eval env) body

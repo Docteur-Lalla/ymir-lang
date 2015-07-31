@@ -102,7 +102,7 @@
           ($$let-arguments lbds (cdr args))
           (list 'list (car args)))))
 
-(define (let pairs body)
+(define (let 'pairs 'body)
     (eval
       ($$let-arguments
         ($$let-lambdas (map fst pairs) body)

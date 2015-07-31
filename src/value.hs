@@ -32,8 +32,8 @@ data YmirValue = Atom String
   | Primitive ([YmirValue] -> ThrowsError YmirValue)
   | Closure
   {
-    params :: [String],
-    vararg :: (Maybe String),
+    params :: [(String, Bool)],
+    vararg :: (Maybe (String, Bool)),
     body :: [YmirValue],
     closure :: Env
   }
@@ -49,11 +49,13 @@ showValue (List li) = "(" ++ unwordsList li ++ ")"
 showValue (DottedList h t) = "(" ++ unwordsList h ++ " . " ++ showValue t ++ ")"
 showValue (Pointer ptr) = "<pointer " ++ show ptr ++ ">"
 showValue (Primitive _) = "<primitive>"
-showValue (Closure {params = args, vararg = varargs, body = body, closure = env}) =
+showValue (Closure {params = arguments, vararg = varargs, body = body, closure = env}) =
   "(lambda (" ++ unwords (map show args) ++
   (case varargs of
     Nothing -> ""
-    Just arg -> " . " ++ arg) ++ ") ...)"
+    Just (arg, b) -> " . " ++ (if b then "'" ++ arg else arg)) ++ ") ...)"
+
+  where args = map (\(str, b) -> if b then "'" ++ str else str) arguments
 
 unwordsList :: [YmirValue] -> String
 unwordsList = unwords . map showValue
