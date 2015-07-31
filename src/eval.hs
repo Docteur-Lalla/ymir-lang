@@ -73,10 +73,11 @@ eval env (List (f:args)) =
           varArgs (Just _) = drop (length params) args
           zippedVarArgs Nothing = []
           zippedVarArgs (Just (name, b)) = map (\var -> ((name, b), var)) (varArgs varargs)
-      otherwise ->
+      Primitive _ ->
         do
           argVals <- mapM (eval env) args
           apply func argVals
+      _ -> throwError (NotFunction "Given value is not a function" $ show f)
 eval env badForm = throwError (BadSpecialForm "Unrecognized special form" badForm)
 
 makeArgument env (Atom name) = (name, False)
