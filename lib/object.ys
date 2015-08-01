@@ -1,11 +1,13 @@
 (require "atom.ys")
 
+(load "IO" (print_string))
+
 (define (fsts li) (map fst li))
 
 (define (member? elem li)
   (if (null? li)
     false
-    (if (eqv? elem (car li))
+    (if (eqv? elem (caar li))
       true
       (member? elem (cdr li)))))
 
@@ -21,6 +23,6 @@
 
 (define (object . methods)
   (lambda ('method . args)
-    (if (member? method (fst methods))
+    (if (member? method methods)
       (eval (cons '(lookup method methods) args))
       '())))
