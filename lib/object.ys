@@ -1,9 +1,5 @@
 (require "atom.ys")
 
-(load "IO" (print_string))
-
-(define (fsts li) (map fst li))
-
 (define (member? elem li)
   (if (null? li)
     false
