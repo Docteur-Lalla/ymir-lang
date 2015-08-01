@@ -1,0 +1,26 @@
+(require "atom.ys")
+
+(define (fsts li) (map fst li))
+
+(define (member? elem li)
+  (if (null? li)
+    false
+    (if (eqv? elem (car li))
+      true
+      (member? elem (cdr li)))))
+
+(define (cadar li) (car (cdr (car li))))
+(define (caar li) (car (car li)))
+
+(define (lookup sym li)
+  (if (null? li)
+    '()
+    (if (eqv? sym (caar li))
+      (cadar li)
+      (lookup sym (cdr li)))))
+
+(define (object . methods)
+  (lambda ('method . args)
+    (if (member? method (fst methods))
+      (eval (cons '(lookup method methods) args))
+      '())))
