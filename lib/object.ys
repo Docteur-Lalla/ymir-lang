@@ -18,7 +18,7 @@
       (lookup sym (cdr li)))))
 
 (define (object . methods)
-  (lambda ('method . args)
+  (lambda ('method . 'args)
     (if (member? method methods)
       (eval (cons '(lookup method methods) args))
       '())))

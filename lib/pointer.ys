@@ -1,0 +1,12 @@
+(require "object.ys")
+(load "pointer"
+  ((c_pointer pointer)
+   (c_pointer_get pointer-get)
+   (c_pointer_set pointer-set)))
+
+(define (new-pointer val)
+  ((lambda (@ptr)
+     (object
+       (list 'get (lambda () (pointer-get @ptr)))
+       (list 'set (lambda (val) (pointer-set @ptr val)))))
+    (pointer val)))
