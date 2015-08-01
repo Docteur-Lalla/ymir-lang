@@ -17,8 +17,15 @@
       (cadar li)
       (lookup sym (cdr li)))))
 
+(define ($$object-escape-symbols args)
+  (if (null? args)
+    '()
+    (if (symbol? (car args))
+      (cons (list 'quote (car args)) ($$object-escape-symbols (cdr args)))
+      (cons (car args) ($$object-escape-symbols (cdr args))))))
+
 (define (object . methods)
-  (lambda ('method . 'args)
+  (lambda ('method . args)
     (if (member? method methods)
-      (eval (cons '(lookup method methods) args))
+      (eval (cons '(lookup method methods) ($$object-escape-symbols args)))
       '())))
