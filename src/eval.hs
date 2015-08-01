@@ -17,6 +17,11 @@ eval env val@(Char _) = return val
 eval env val@(Number _) = return val
 eval env val@(Bool _) = return val
 eval env (Atom id) = getVar env id
+eval env (DottedList x xs) =
+  do
+    x' <- mapM (eval env) x
+    xs' <- eval env xs
+    return (DottedList x' xs')
 eval env (List [Atom "if", pred, true, false]) =
   do
     result <- eval env pred

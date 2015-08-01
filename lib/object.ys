@@ -8,13 +8,16 @@
       (member? elem (cdr li)))))
 
 (define (cadar li) (car (cdr (car li))))
+(define (cdar li) (cdr (car li)))
 (define (caar li) (car (car li)))
 
 (define (lookup sym li)
   (if (null? li)
     '()
     (if (eqv? sym (caar li))
-      (cadar li)
+      (if (dotted-list? (car li))
+        (cdar li)
+        (cadar li))
       (lookup sym (cdr li)))))
 
 (define ($$object-escape-symbols args)

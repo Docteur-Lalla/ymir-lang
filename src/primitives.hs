@@ -24,6 +24,7 @@ primitives =
     ("number?", numberType),
     ("bool?", boolType),
     ("char?", charType),
+    ("dotted-list?", dottedListType),
     ("type", showType),
     ("=", numBoolBinop(==)),
     ("<", numBoolBinop(<)),
@@ -78,6 +79,10 @@ boolType _ = return (Bool False)
 charType :: [YmirValue] -> ThrowsError YmirValue
 charType [(Char _)] = return (Bool True)
 charType _ = return (Bool False)
+
+dottedListType :: [YmirValue] -> ThrowsError YmirValue
+dottedListType [(DottedList _ _)] = return (Bool True)
+dottedListType _ = return (Bool False)
 
 showType :: [YmirValue] -> ThrowsError YmirValue
 showType [(List _)] = return $ String "list"
