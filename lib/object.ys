@@ -20,6 +20,12 @@
         (cadar li))
       (lookup sym (cdr li)))))
 
+(define (attr-reader name attr)
+  ('name . (lambda () (attr get))))
+
+(define (attr-writer name attr)
+  ('name . (lambda (val) (attr set val))))
+
 (define ($$object-escape-symbols args)
   (if (null? args)
     '()
