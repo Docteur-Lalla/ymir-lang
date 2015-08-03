@@ -1,0 +1,10 @@
+(require "list.ys")
+(require "pointer.ys")
+(require "object.ys")
+
+(define (class classname 'attrs . 'methods)
+  (lambda vals
+    (apply (eval (list 'lambda attrs
+      (cons 'object
+        (cons (quote ('class . (lambda () classname))) methods))))
+      (map new-pointer vals))))
