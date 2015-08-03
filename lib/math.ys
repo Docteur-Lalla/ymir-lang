@@ -1,0 +1,12 @@
+(load "math.so"
+  ((c_cos cos)
+  (c_sin sin)
+  (c_tan tan)
+  (c_sqrt sqrt)))
+
+(define (pow x n)
+  (if (= n 0)
+    1
+    (if (= n 1)
+      x
+      (* x (pow x (- n 1))))))
