@@ -1,9 +1,9 @@
-#include "../src/ffi_stub.h"
+#include "../include/ymir.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-HsStablePtr print_number(HsPtr* ptr, int size)
+YmirValue print_number(YmirArray ptr, int size)
 {
   if(size != 1)
     return ymir_throwNumberArguments(1, ptr, size);
@@ -12,10 +12,10 @@ HsStablePtr print_number(HsPtr* ptr, int size)
     ymir_throwTypeMismatch("number", ptr[0]);
 
   printf("%d", ymir_getNumber(ptr[0]));
-  return ymir_return(ymir_newList(NULL, 0));
+  YMIR_RETURN(ymir_newList(NULL, 0));
 }
 
-HsStablePtr print_char(HsPtr* ptr, int size)
+YmirValue print_char(YmirArray ptr, int size)
 {
   if(size != 1)
     return ymir_throwNumberArguments(1, ptr, size);
@@ -24,10 +24,10 @@ HsStablePtr print_char(HsPtr* ptr, int size)
     ymir_throwTypeMismatch("char", ptr[0]);
 
   printf("%c", ymir_getChar(ptr[0]));
-  return ymir_return(ymir_newList(NULL, 0));
+  YMIR_RETURN(ymir_newList(NULL, 0));
 }
 
-HsStablePtr print_bool(HsPtr* ptr, int size)
+YmirValue print_bool(YmirArray ptr, int size)
 {
   if(size != 1)
     return ymir_throwNumberArguments(1, ptr, size);
@@ -42,10 +42,10 @@ HsStablePtr print_bool(HsPtr* ptr, int size)
   else
     printf("true");
 
-  return ymir_return(ymir_newList(NULL, 0));
+  YMIR_RETURN(ymir_newList(NULL, 0));
 }
 
-HsStablePtr print_string(HsPtr* ptr, int size)
+YmirValue print_string(YmirArray ptr, int size)
 {
   if(size != 1)
     return ymir_throwNumberArguments(1, ptr, size);
@@ -54,19 +54,19 @@ HsStablePtr print_string(HsPtr* ptr, int size)
     return ymir_throwTypeMismatch("string", ptr[0]);
 
   printf("%s", ymir_getString(ptr[0]));
-  return ymir_return(ymir_newList(NULL, 0));
+  YMIR_RETURN(ymir_newList(NULL, 0));
 }
 
-HsStablePtr flush_stdout(HsPtr* ptr, int size)
+YmirValue flush_stdout(YmirArray ptr, int size)
 {
   if(size > 0)
     return ymir_throwNumberArguments(0, ptr, size);
   
   fflush(stdout);
-  return ymir_return(ymir_newList(NULL, 0));
+  YMIR_RETURN(ymir_newList(NULL, 0));
 }
 
-HsStablePtr input_number(HsPtr* ptr, int size)
+YmirValue input_number(YmirArray ptr, int size)
 {
   if(size == 1 && ymir_isString(ptr[0]))
   {
@@ -76,10 +76,10 @@ HsStablePtr input_number(HsPtr* ptr, int size)
 
   int n;
   scanf("%d", &n);
-  return ymir_return(ymir_newNumber(n));
+  YMIR_RETURN(ymir_newNumber(n));
 }
 
-HsStablePtr input_char(HsPtr* ptr, int size)
+YmirValue input_char(YmirArray ptr, int size)
 {
   if(size == 1 && ymir_isString(ptr[0]))
   {
@@ -89,10 +89,10 @@ HsStablePtr input_char(HsPtr* ptr, int size)
 
   char c;
   scanf("%c", &c);
-  return ymir_return(ymir_newChar(c));
+  YMIR_RETURN(ymir_newChar(c));
 }
 
-HsStablePtr input_bool(HsPtr* ptr, int size)
+YmirValue input_bool(YmirArray ptr, int size)
 {
   if(size == 1 && ymir_isString(ptr[0]))
   {
@@ -104,9 +104,9 @@ HsStablePtr input_bool(HsPtr* ptr, int size)
   scanf("%s", s);
 
   if(strcmp(s, "true"))
-    return ymir_return(ymir_newBool(1));
+    YMIR_RETURN(ymir_newBool(1));
   else
-    return ymir_return(ymir_newBool(0));
+    YMIR_RETURN(ymir_newBool(0));
 }
 
 char* readline(FILE* file)
@@ -148,7 +148,7 @@ char* readline(FILE* file)
   return result;
 }
 
-HsStablePtr input_string(HsPtr* ptr, int size)
+YmirValue input_string(YmirArray ptr, int size)
 {
   if(size == 1 && ymir_isString(ptr[0]))
   {
@@ -157,9 +157,9 @@ HsStablePtr input_string(HsPtr* ptr, int size)
   }
 
   char* line = readline(stdin);
-  HsStablePtr ret = ymir_newString(line);
+  YmirValue ret = ymir_newString(line);
   free(line);
 
-  return ymir_return(ret);
+  YMIR_RETURN(ret);
 }
 
