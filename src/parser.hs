@@ -45,8 +45,19 @@ parseAtom =
       "false" -> Bool False
       otherwise -> Atom atom
 
+parseInteger :: Parser YmirValue
+parseInteger = liftM (Number . Integer . read) $ many1 digit
+
+parseFloat :: Parser YmirValue
+parseFloat =
+  do
+    i <- many1 digit
+    char '.'
+    d <- many1 digit
+    return $ (Number . Float . read) (i ++ "." ++ d)
+
 parseNumber :: Parser YmirValue
-parseNumber = liftM (Number . read) $ many1 digit
+parseNumber = (try parseFloat) <|> parseInteger
 
 parseChar =
   do

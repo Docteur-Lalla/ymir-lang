@@ -14,7 +14,8 @@ type ReturnValuePtr = StablePtr (ThrowsError YmirValue)
 type YmirCFunction = Ptr ValuePtr -> Int -> ReturnValuePtr
 
 -- YmirValue creation functions
-ymir_newNumber i = unsafePerformIO $ newStablePtr (Number i)
+ymir_newInteger i = unsafePerformIO $ newStablePtr (Number $ Integer i)
+ymir_newFloat f = unsafePerformIO $ newStablePtr (Number $ Float f)
 ymir_newChar c = unsafePerformIO $ newStablePtr (Char c)
 ymir_newBool b = unsafePerformIO $ newStablePtr (Bool b)
 ymir_newString cs = unsafePerformIO $
@@ -36,11 +37,17 @@ ymir_return ptr = unsafePerformIO $
     newStablePtr (return val)
 
 -- Type checking functions
-ymir_isNumber ptr = unsafePerformIO $
+ymir_isInteger ptr = unsafePerformIO $
   do
     val <- deRefStablePtr ptr
     case val of
       Number _ -> return True
+      otherwise -> return False
+ymir_isFloat ptr = unsafePerformIO $
+  do
+    val <- deRefStablePtr ptr
+    case val of
+      Number (Float _) -> return True
       otherwise -> return False
 ymir_isChar ptr = unsafePerformIO $
   do
@@ -75,12 +82,19 @@ ymir_isPointer ptr = unsafePerformIO $
       otherwise -> return False
 
 -- Getters
-ymir_getNumber ptr = unsafePerformIO $
+ymir_getInteger ptr = unsafePerformIO $
   do
     val <- deRefStablePtr ptr
     case val of
-      Number n -> return n
+      Number (Integer n) -> return n
       otherwise -> return 0
+
+ymir_getFloat ptr = unsafePerformIO $
+  do
+    val <- deRefStablePtr ptr
+    case val of
+      Number (Float f) -> return f
+      otherwise -> return 0.0
 
 ymir_getChar ptr = unsafePerformIO $
   do
@@ -142,7 +156,8 @@ makeYmirPrimitive mod sym args = unsafePerformIO $
     return res
 
 -- Foreign Function Interface
-foreign export ccall ymir_newNumber :: Int -> ValuePtr
+foreign export ccall ymir_newInteger :: Int -> ValuePtr
+foreign export ccall ymir_newFloat :: Double -> ValuePtr
 foreign export ccall ymir_newChar :: Char -> ValuePtr
 foreign export ccall ymir_newBool :: Bool -> ValuePtr
 foreign export ccall ymir_newString :: CString -> ValuePtr
@@ -151,14 +166,16 @@ foreign export ccall ymir_newPointer :: Ptr () -> ValuePtr
 
 foreign export ccall ymir_return :: ValuePtr -> ReturnValuePtr
 
-foreign export ccall ymir_isNumber :: ValuePtr -> Bool
+foreign export ccall ymir_isInteger :: ValuePtr -> Bool
+foreign export ccall ymir_isFloat :: ValuePtr -> Bool
 foreign export ccall ymir_isChar :: ValuePtr -> Bool
 foreign export ccall ymir_isBool :: ValuePtr -> Bool
 foreign export ccall ymir_isString :: ValuePtr -> Bool
 foreign export ccall ymir_isList :: ValuePtr -> Bool
 foreign export ccall ymir_isPointer :: ValuePtr -> Bool
 
-foreign export ccall ymir_getNumber :: ValuePtr -> Int
+foreign export ccall ymir_getInteger :: ValuePtr -> Int
+foreign export ccall ymir_getFloat :: ValuePtr -> Double
 foreign export ccall ymir_getChar :: ValuePtr -> Char
 foreign export ccall ymir_getBool :: ValuePtr -> Bool
 foreign export ccall ymir_getString :: ValuePtr -> CString

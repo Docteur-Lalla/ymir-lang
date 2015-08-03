@@ -15,10 +15,8 @@ primitives =
     ("+", numBinop (+)),
     ("-", numBinop (-)),
     ("*", numBinop (*)),
-    ("/", numBinop div),
-    ("%", numBinop mod),
-    ("quotient", numBinop quot),
-    ("rem", numBinop rem),
+    ("/", numBinop (/)),
+    ("%", modNum),
     ("string?", stringType),
     ("symbol?", symbolType),
     ("number?", numberType),
@@ -46,11 +44,11 @@ primitiveBindings = nullEnv >>= (flip bindVars $ map makeFunc primitives)
   where
     makeFunc (var, func) = (var, Primitive func)
 
-numBinop :: (Int -> Int -> Int) -> [YmirValue] -> ThrowsError YmirValue
+numBinop :: (Number -> Number -> Number) -> [YmirValue] -> ThrowsError YmirValue
 numBinop op singleVal@[_] = throwError (NumArgs 2 singleVal)
 numBinop op params = mapM unpackNum params >>= return . Number . foldl1 op
 
-unpackNum :: YmirValue -> ThrowsError Int
+unpackNum :: YmirValue -> ThrowsError Number
 unpackNum (Number n) = return n
 unpackNum (List [n]) = unpackNum n
 unpackNum (String s) =
@@ -59,6 +57,10 @@ unpackNum (String s) =
       then throwError (TypeMismatch "number" (String s))
       else return $ fst (parsed !! 0)
 unpackNum notNum = throwError (TypeMismatch "number" notNum)
+
+modNum :: [YmirValue] -> ThrowsError YmirValue
+modNum [Number (Integer a), Number (Integer b)] = return $ Number (Integer $ a `mod` b)
+modNum (values:xs) = throwError (TypeMismatch "integer" values)
 
 stringType :: [YmirValue] -> ThrowsError YmirValue
 stringType [(String _)] = return (Bool True)

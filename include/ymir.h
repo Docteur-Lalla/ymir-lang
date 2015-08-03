@@ -10,4 +10,8 @@
 typedef HsStablePtr YmirValue;
 typedef HsPtr* YmirArray;
 
+#define ymir_newNumber ymir_newInteger
+#define ymir_isNumber ymir_isInteger
+#define ymir_getNumber ymir_getInteger
+
 #endif

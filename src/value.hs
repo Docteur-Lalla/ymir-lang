@@ -6,6 +6,52 @@ import Text.ParserCombinators.Parsec (ParseError)
 
 type Env = IORef [(String, IORef YmirValue)]
 
+data Number = Integer Int
+  | Float Double
+  deriving (Eq, Ord, Read)
+
+instance Show Number where
+  show (Integer i) = show i
+  show (Float f) = show f
+
+instance Fractional Number where
+  (/) (Integer a) (Integer b) = (Integer $ a `div` b)
+  (/) (Integer a) (Float b) = (Float $ fromIntegral a / b)
+  (/) (Float a) (Integer b) = (Float $ a / fromIntegral b)
+  (/) (Float a) (Float b) = (Float $ a / b)
+
+instance Num Number where
+  (+) (Integer a) (Integer b) = (Integer $ a + b)
+  (+) (Float a) (Integer b) = (Float $ a + fromIntegral b)
+  (+) (Integer a) (Float b) = (Float $ fromIntegral  a + b)
+  (+) (Float a) (Float b) = (Float $ a + b)
+
+  (*) (Integer a) (Integer b) = (Integer $ a * b)
+  (*) (Float a) (Integer b) = (Float $ a * fromIntegral b)
+  (*) (Integer a) (Float b) = (Float $ fromIntegral a * b)
+  (*) (Float a) (Float b) = (Float $ a * b)
+
+  negate (Integer i) = (Integer $ -i)
+  negate (Float f) = (Float $ -f)
+
+  abs (Integer i)
+    | i < 0 = Integer (-i)
+    | otherwise = Integer i
+  abs (Float f)
+    | f < 0 = Float (-f)
+    | otherwise = Float f
+
+  signum (Integer i)
+    | i < 0 = Integer (-1)
+    | i == 0 = Integer 0
+    | otherwise = Integer 1
+  signum (Float f)
+    | f < 0 = Float (-1)
+    | f == 0 = Float 0
+    | otherwise = Float 1
+
+  fromInteger i = Integer (fromIntegral i)
+
 data YmirError = NumArgs Integer [YmirValue]
   | TypeMismatch String YmirValue
   | Parser ParseError
@@ -24,7 +70,7 @@ type IOThrowsError = ErrorT YmirError IO
 data YmirValue = Atom String
   | List [YmirValue]
   | DottedList [YmirValue] YmirValue
-  | Number Int
+  | Number Number
   | Char Char
   | String String
   | Bool Bool
