@@ -7,6 +7,6 @@
 (define (new-pointer val)
   ((lambda (@ptr)
      (object
-       (list 'get (lambda () (pointer-get @ptr)))
-       (list 'set (lambda (val) (pointer-set @ptr val)))))
+       ('get . (lambda () (pointer-get @ptr)))
+       ('set . (lambda (val) (pointer-set @ptr val)))))
     (pointer val)))
