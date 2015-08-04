@@ -22,6 +22,10 @@ ymir_newString cs = unsafePerformIO $
   do
     s <- peekCString cs
     newStablePtr (String s)
+ymir_newSymbol cs = unsafePerformIO $
+  do
+    s <- peekCString cs
+    newStablePtr (Atom s)
 ymir_newList ary len = unsafePerformIO $
   do
     ptrlist <- peekArray len ary
@@ -66,6 +70,12 @@ ymir_isString ptr = unsafePerformIO $
     val <- deRefStablePtr ptr
     case val of
       String _ -> return True
+      otherwise -> return False
+ymir_isSymbol ptr = unsafePerformIO $
+  do
+    val <- deRefStablePtr ptr
+    case val of
+      Atom _ -> return True
       otherwise -> return False
 ymir_isList ptr = unsafePerformIO $
   do
@@ -116,6 +126,12 @@ ymir_getString ptr = unsafePerformIO $
     case val of
       String s -> newCString s
       otherwise -> newCString ""
+ymir_getSymbol ptr = unsafePerformIO $
+  do
+    val <- deRefStablePtr ptr
+    case val of
+      Atom s -> newCString s
+      otherwise -> newCString ""
 
 ymir_getPointer ptr = unsafePerformIO $
   do
@@ -161,6 +177,7 @@ foreign export ccall ymir_newFloat :: Double -> ValuePtr
 foreign export ccall ymir_newChar :: Char -> ValuePtr
 foreign export ccall ymir_newBool :: Bool -> ValuePtr
 foreign export ccall ymir_newString :: CString -> ValuePtr
+foreign export ccall ymir_newSymbol :: CString -> ValuePtr
 foreign export ccall ymir_newList :: Ptr ValuePtr -> Int -> ValuePtr
 foreign export ccall ymir_newPointer :: Ptr () -> ValuePtr
 
@@ -171,6 +188,7 @@ foreign export ccall ymir_isFloat :: ValuePtr -> Bool
 foreign export ccall ymir_isChar :: ValuePtr -> Bool
 foreign export ccall ymir_isBool :: ValuePtr -> Bool
 foreign export ccall ymir_isString :: ValuePtr -> Bool
+foreign export ccall ymir_isSymbol :: ValuePtr -> Bool
 foreign export ccall ymir_isList :: ValuePtr -> Bool
 foreign export ccall ymir_isPointer :: ValuePtr -> Bool
 
@@ -179,6 +197,7 @@ foreign export ccall ymir_getFloat :: ValuePtr -> Double
 foreign export ccall ymir_getChar :: ValuePtr -> Char
 foreign export ccall ymir_getBool :: ValuePtr -> Bool
 foreign export ccall ymir_getString :: ValuePtr -> CString
+foreign export ccall ymir_getSymbol :: ValuePtr -> CString
 foreign export ccall ymir_getPointer :: ValuePtr -> Ptr ()
 
 foreign export ccall ymir_throwNumberArguments :: Int -> Ptr ValuePtr -> Int -> ReturnValuePtr

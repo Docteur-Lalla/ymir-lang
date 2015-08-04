@@ -20,8 +20,11 @@ primitives =
     ("string?", stringType),
     ("symbol?", symbolType),
     ("number?", numberType),
+    ("integer?", integerType),
+    ("float?", floatType),
     ("bool?", boolType),
     ("char?", charType),
+    ("list?", listType),
     ("dotted-list?", dottedListType),
     ("type", showType),
     ("=", numBoolBinop(==)),
@@ -74,6 +77,14 @@ numberType :: [YmirValue] -> ThrowsError YmirValue
 numberType [(Number _)] = return (Bool True)
 numberType _ = return (Bool False)
 
+integerType :: [YmirValue] -> ThrowsError YmirValue
+integerType [(Number (Integer _))] = return (Bool True)
+integerType _ = return (Bool False)
+
+floatType :: [YmirValue] -> ThrowsError YmirValue
+floatType [(Number (Float _))] = return (Bool True)
+floatType _ = return (Bool False)
+
 boolType :: [YmirValue] -> ThrowsError YmirValue
 boolType [(Bool _)] = return (Bool True)
 boolType _ = return (Bool False)
@@ -82,16 +93,24 @@ charType :: [YmirValue] -> ThrowsError YmirValue
 charType [(Char _)] = return (Bool True)
 charType _ = return (Bool False)
 
+listType :: [YmirValue] -> ThrowsError YmirValue
+listType [(List _)] = return (Bool True)
+listType _ = return (Bool False)
+
 dottedListType :: [YmirValue] -> ThrowsError YmirValue
 dottedListType [(DottedList _ _)] = return (Bool True)
 dottedListType _ = return (Bool False)
 
 showType :: [YmirValue] -> ThrowsError YmirValue
 showType [(List _)] = return $ String "list"
+showType [(DottedList _ _)] = return $ String "dotted-list"
 showType [(String _)] = return $ String "string"
+showType [(Atom _)] = return $ String "symbol"
 showType [(Char _)] = return $ String "char"
-showType [(Number _)] = return $ String "number"
+showType [(Number (Integer _))] = return $ String "integer"
+showType [(Number (Float _))] = return $ String "float"
 showType [(Bool _)] = return $ String "bool"
+showType [(Pointer _)] = return $ String "pointer"
 showType _ = return $ String "unknown"
 
 boolBinop :: (YmirValue -> ThrowsError a) -> (a -> a -> Bool) -> [YmirValue] -> ThrowsError YmirValue

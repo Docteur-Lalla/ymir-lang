@@ -46,18 +46,36 @@ parseAtom =
       otherwise -> Atom atom
 
 parseInteger :: Parser YmirValue
-parseInteger = liftM (Number . Integer . read) $ many1 digit
+parseInteger = liftM (Number . Integer . read) $ (parseNegative <|> many1 digit)
+  
+  where
+    parseNegative =
+      do
+        m <- char '-'
+        i <- many1 digit
+        return (m:i)
 
 parseFloat :: Parser YmirValue
-parseFloat =
+parseFloat = liftM (Number . Float . read) $
   do
-    i <- many1 digit
-    char '.'
-    d <- many1 digit
-    return $ (Number . Float . read) (i ++ "." ++ d)
+    parseNegative
+    <|> parsePositive
+  
+  where
+    parsePositive =
+      do
+        i <- many1 digit
+        char '.'
+        d <- many1 digit
+        return (i ++ "." ++ d)
+    parseNegative =
+      do
+        m <- char '-'
+        i <- parsePositive
+        return (m:i)
 
 parseNumber :: Parser YmirValue
-parseNumber = (try parseFloat) <|> parseInteger
+parseNumber = (try parseFloat) <|> (try parseInteger)
 
 parseChar =
   do
@@ -85,9 +103,9 @@ parseQuoted =
 
 parseExpr :: Parser YmirValue
 parseExpr =
-  parseAtom
+  parseNumber
+  <|> parseAtom
   <|> parseString
-  <|> parseNumber
   <|> ((try parseChar) <|> parseQuoted)
   <|> do
     char '('
