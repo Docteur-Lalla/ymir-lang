@@ -2,7 +2,9 @@
   ((c_cos cos)
   (c_sin sin)
   (c_tan tan)
-  (c_sqrt sqrt)))
+  (c_sqrt sqrt)
+  (c_ceil ceil)
+  (c_floor floor)))
 
 (define (pow x n)
   (if (= n 0)

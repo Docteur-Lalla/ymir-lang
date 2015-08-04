@@ -41,7 +41,7 @@ ymir_isInteger ptr = unsafePerformIO $
   do
     val <- deRefStablePtr ptr
     case val of
-      Number _ -> return True
+      Number (Integer _) -> return True
       otherwise -> return False
 ymir_isFloat ptr = unsafePerformIO $
   do

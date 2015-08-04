@@ -5,7 +5,7 @@ YmirValue c_cos(YmirArray args, int size)
 {
   if(size != 1)
     YMIR_THROW_NUMBER_ARGS(1, args, size);
-  else if(!ymir_isFloat(args[0]) && !ymir_isInteger(args[0]))
+  else if(!ymir_isNumber(args[0]))
     YMIR_THROW_TYPE_MISMATCH("number", args[0]);
   else
   {
@@ -21,7 +21,7 @@ YmirValue c_sin(YmirArray args, int size)
 {
   if(size != 1)
     YMIR_THROW_NUMBER_ARGS(1, args, size);
-  else if(!ymir_isFloat(args[0]) && !ymir_isInteger(args[0]))
+  else if(!ymir_isNumber(args[0]))
     YMIR_THROW_TYPE_MISMATCH("number", args[0]);
   else
   {
@@ -37,7 +37,7 @@ YmirValue c_tan(YmirArray args, int size)
 {
   if(size != 1)
     YMIR_THROW_NUMBER_ARGS(1, args, size);
-  else if(!ymir_isFloat(args[0]) && !ymir_isInteger(args[0]))
+  else if(!ymir_isNumber(args[0]))
     YMIR_THROW_TYPE_MISMATCH("number", args[0]);
   else
   {
@@ -53,7 +53,7 @@ YmirValue c_sqrt(YmirArray args, int size)
 {
   if(size != 1)
     YMIR_THROW_NUMBER_ARGS(1, args, size);
-  else if(!ymir_isFloat(args[0]) && !ymir_isInteger(args[0]))
+  else if(!ymir_isNumber(args[0]))
     YMIR_THROW_TYPE_MISMATCH("number", args[0]);
   else
   {
@@ -62,5 +62,41 @@ YmirValue c_sqrt(YmirArray args, int size)
       (double)ymir_getInteger(args[0]);
     double res = sqrt(arg);
     YMIR_RETURN(ymir_newFloat(res));
+  }
+}
+
+YmirValue c_ceil(YmirArray args, int size)
+{
+  if(size != 1)
+    YMIR_THROW_NUMBER_ARGS(1, args, size);
+  else if(!ymir_isNumber(args[0]))
+    YMIR_THROW_TYPE_MISMATCH("number", args[0]);
+  else
+  {
+    if(ymir_isInteger(args[0]))
+      YMIR_RETURN(args[0]);
+    else
+    {
+      double arg = ymir_getFloat(args[0]);
+      YMIR_RETURN(ymir_newFloat(ceil(arg)));
+    }
+  }
+}
+
+YmirValue c_floor(YmirArray args, int size)
+{
+  if(size != 1)
+    YMIR_THROW_NUMBER_ARGS(1, args, size);
+  else if(!ymir_isNumber(args[0]))
+    YMIR_THROW_TYPE_MISMATCH("number", args[0]);
+  else
+  {
+    if(ymir_isInteger(args[0]))
+      YMIR_RETURN(args[0]);
+    else
+    {
+      double arg = ymir_getFloat(args[0]);
+      YMIR_RETURN(ymir_newFloat(floor(arg)));
+    }
   }
 }
