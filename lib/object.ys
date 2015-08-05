@@ -36,5 +36,5 @@
 (define (object . methods)
   (lambda ('method . args)
     (if (member? method methods)
-      (eval (cons '(lookup method methods) ($$object-escape-symbols args)))
+      (apply (lookup method methods) ($$object-escape-symbols args))
       '())))

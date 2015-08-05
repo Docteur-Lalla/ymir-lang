@@ -2,9 +2,17 @@
 (require "pointer.ys")
 (require "object.ys")
 
+(define (list . objs) objs)
+(define (do . instrs) (car (reverse instrs)))
+
 (define (class classname 'attrs . 'methods)
   (lambda vals
-    (apply (eval (list 'lambda attrs
-      (cons 'object
-        (cons (quote ('class . (lambda () classname))) methods))))
-      (map new-pointer vals))))
+    ((lambda (obj)
+      (do
+        (obj self= obj)
+        obj))
+      (apply (eval (list 'lambda (cons '@self attrs)
+        (cons 'object
+          (cons (quote ('class . (lambda () classname)))
+            (cons (quote (attr-writer 'self= @self)) methods)))))
+        (cons (new-pointer '()) (map new-pointer vals))))))
