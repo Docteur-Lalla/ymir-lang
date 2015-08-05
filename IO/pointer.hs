@@ -29,6 +29,7 @@ pointerSet [Pointer ptr, val] = return $ unsafePerformIO $
     ref <- deRefStablePtr (castPtrToStablePtr ptr)
     writeIORef ref val
     return val
+pointerSet (val:xs) = throwError (TypeMismatch "pointer" val)
 
 c_pointer ary 1 = unsafePerformIO $
   do

@@ -3,6 +3,9 @@
     (eqv? li "")
     (eqv? li nil)))
 
+(define (flip f)
+  (lambda (arg1 arg2)
+    (f arg2 arg1)))
 
 (define (foldl f acc li)
   (if (null? li)
@@ -46,6 +49,8 @@
 
 (define (every? pred . li)
   (apply (lambda li (fold and true li)) (map pred li)))
+
+(define nil '())
 
 (define (null? li)
   (if (string? li)
