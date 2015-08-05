@@ -3,25 +3,37 @@
 #include <stdlib.h>
 #include <string.h>
 
-YmirValue print_number(YmirArray ptr, int size)
+YmirValue print_integer(YmirArray ptr, int size)
 {
   if(size != 1)
-    return ymir_throwNumberArguments(1, ptr, size);
+    YMIR_THROW_NUMBER_ARGS(1, ptr, size);
 
-  if(!ymir_isNumber(ptr[0]))
-    ymir_throwTypeMismatch("number", ptr[0]);
+  if(!ymir_isInteger(ptr[0]))
+    YMIR_THROW_TYPE_MISMATCH("integer", ptr[0]);
 
-  printf("%d", ymir_getNumber(ptr[0]));
+  printf("%d", ymir_getInteger(ptr[0]));
+  YMIR_RETURN(ymir_newList(NULL, 0));
+}
+
+YmirValue print_float(YmirArray ptr, int size)
+{
+  if(size != 1)
+    YMIR_THROW_NUMBER_ARGS(1, ptr, size);
+
+  if(!ymir_isFloat(ptr[0]))
+    YMIR_THROW_TYPE_MISMATCH("float", ptr[0]);
+
+  printf("%lf", ymir_getFloat(ptr[0]));
   YMIR_RETURN(ymir_newList(NULL, 0));
 }
 
 YmirValue print_char(YmirArray ptr, int size)
 {
   if(size != 1)
-    return ymir_throwNumberArguments(1, ptr, size);
+    YMIR_THROW_NUMBER_ARGS(1, ptr, size);
 
   if(!ymir_isChar(ptr[0]))
-    ymir_throwTypeMismatch("char", ptr[0]);
+    YMIR_THROW_TYPE_MISMATCH("char", ptr[0]);
 
   printf("%c", ymir_getChar(ptr[0]));
   YMIR_RETURN(ymir_newList(NULL, 0));
@@ -30,10 +42,10 @@ YmirValue print_char(YmirArray ptr, int size)
 YmirValue print_bool(YmirArray ptr, int size)
 {
   if(size != 1)
-    return ymir_throwNumberArguments(1, ptr, size);
+    YMIR_THROW_NUMBER_ARGS(1, ptr, size);
 
   if(!ymir_isBool(ptr[0]))
-    return ymir_throwTypeMismatch("bool", ptr[0]);
+    YMIR_THROW_TYPE_MISMATCH("bool", ptr[0]);
 
   int b = ymir_getBool(ptr[0]);
 
@@ -48,10 +60,10 @@ YmirValue print_bool(YmirArray ptr, int size)
 YmirValue print_string(YmirArray ptr, int size)
 {
   if(size != 1)
-    return ymir_throwNumberArguments(1, ptr, size);
+    YMIR_THROW_NUMBER_ARGS(1, ptr, size);
 
   if(!ymir_isString(ptr[0]))
-    return ymir_throwTypeMismatch("string", ptr[0]);
+    YMIR_THROW_TYPE_MISMATCH("string", ptr[0]);
 
   printf("%s", ymir_getString(ptr[0]));
   YMIR_RETURN(ymir_newList(NULL, 0));
@@ -60,13 +72,13 @@ YmirValue print_string(YmirArray ptr, int size)
 YmirValue flush_stdout(YmirArray ptr, int size)
 {
   if(size > 0)
-    return ymir_throwNumberArguments(0, ptr, size);
+    YMIR_THROW_NUMBER_ARGS(0, ptr, size);
   
   fflush(stdout);
   YMIR_RETURN(ymir_newList(NULL, 0));
 }
 
-YmirValue input_number(YmirArray ptr, int size)
+YmirValue input_integer(YmirArray ptr, int size)
 {
   if(size == 1 && ymir_isString(ptr[0]))
   {
@@ -76,7 +88,20 @@ YmirValue input_number(YmirArray ptr, int size)
 
   int n;
   scanf("%d", &n);
-  YMIR_RETURN(ymir_newNumber(n));
+  YMIR_RETURN(ymir_newInteger(n));
+}
+
+YmirValue input_float(YmirArray ptr, int size)
+{
+  if(size == 1 && ymir_isString(ptr[0]))
+  {
+    print_string(ptr, size);
+    flush_stdout(NULL, 0);
+  }
+
+  double n;
+  scanf("%lf", &n);
+  YMIR_RETURN(ymir_newFloat(n));
 }
 
 YmirValue input_char(YmirArray ptr, int size)

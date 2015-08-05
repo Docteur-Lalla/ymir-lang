@@ -5,6 +5,8 @@
   (c_sqrt sqrt)
   (c_ceil ceil)
   (c_floor floor)))
+(require "math/point.ys")
+(require "math/vector.ys")
 
 (define (abs x)
   ((lambda (zero)
