@@ -8,5 +8,6 @@
   ((lambda (@ptr)
      (object
        ('get . (lambda () (pointer-get @ptr)))
-       ('set . (lambda (val) (pointer-set @ptr val)))))
+       ('set . (lambda (val) (pointer-set @ptr val)))
+       ('$ . (lambda (f . args) (apply f (cons (pointer-get @ptr) args))))))
     (pointer val)))

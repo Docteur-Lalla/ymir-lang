@@ -1,0 +1,36 @@
+(require "list.ys")
+(require "class.ys")
+
+(define (vector3 x y z) (list x y z))
+(define (vec3-x v) (car v))
+(define (vec3-y v) (car (cdr v)))
+(define (vec3-z v) (car (cdr (cdr v))))
+
+(define (vec3-neg v)
+  (vector3
+    (- 0 (vec3-x v))
+    (- 0 (vec3-y v))
+    (- 0 (vec3-z v))))
+
+(define (vec3-add v1 v2)
+  (vector3
+    (+ (vec3-x v1) (vec3-x v2))
+    (+ (vec3-y v1) (vec3-y v2))
+    (+ (vec3-z v1) (vec3-z v2))))
+
+(define (vec3-min v1 v2)
+  (vec3-add v1 (vec3-neg v2)))
+
+(define (vec3-scalar v1 v2)
+  (+
+    (* (vec3-x v1) (vec3-x v2))
+    (* (vec3-y v1) (vec3-y v2))
+    (* (vec3-z v1) (vec3-z v2))))
+
+(define new-vector3
+  (class "Vector3" (@vec)
+    (attr-reader 'vec @vec)
+    ('add . (lambda (v) (@vec $ vec3-add (v vec))))
+    ('neg . (lambda () (@vec $ vec3-neg)))
+    ('min . (lambda (v) (@vec $ vec3-min (v vec))))
+    ('scalar . (lambda (v) (@vec $ vec3-scalar (v vec))))))
