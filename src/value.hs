@@ -83,6 +83,12 @@ data YmirValue = Atom String
     body :: [YmirValue],
     closure :: Env
   }
+  | Macro
+  {
+    params :: [(String, Bool)],
+    vararg :: (Maybe (String, Bool)),
+    body :: [YmirValue]
+  }
 
 showValue :: YmirValue -> String
 showValue (String s) = "\"" ++ s ++ "\""
@@ -100,7 +106,12 @@ showValue (Closure {params = arguments, vararg = varargs, body = body, closure =
   (case varargs of
     Nothing -> ""
     Just (arg, b) -> " . " ++ (if b then "'" ++ arg else arg)) ++ ") ...)"
-
+  where args = map (\(str, b) -> if b then "'" ++ str else str) arguments
+showValue (Macro {params = arguments, vararg = varargs, body = body}) =
+  "(macro (" ++ unwords (map show args) ++
+  (case varargs of
+    Nothing -> ""
+    Just (arg, b) -> " . " ++ (if b then "'" ++ arg else arg)) ++ ") ...)"
   where args = map (\(str, b) -> if b then "'" ++ str else str) arguments
 
 unwordsList :: [YmirValue] -> String

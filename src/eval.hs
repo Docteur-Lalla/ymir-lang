@@ -54,6 +54,10 @@ eval env (List (Atom "define":List (Atom var:params):body)) = function
   where function = makeNormalFunc env params body >>= defineVar env var
 eval env (List (Atom "define":DottedList (Atom var:params) varargs:body)) = function
   where  function = makeVarargs varargs env params body >>= defineVar env var
+eval env (List (Atom "def-macro":List (Atom var:params):body)) = macro
+  where macro = makeNormalMacro env params body >>= defineVar env var
+eval env (List (Atom "def-macro":DottedList (Atom var:params) varargs:body)) = macro
+  where  macro = makeVarargsMacro varargs env params body >>= defineVar env var
 eval env (List (Atom "lambda":List params:body)) = makeNormalFunc env params body
 eval env (List (Atom "lambda":DottedList params varargs:body)) = lambda
   where lambda = makeVarargs varargs env params body
@@ -65,24 +69,30 @@ eval env (List (f:args)) =
     case func of
       Closure params varargs body ctx ->
         do
-          argVals <- mapM (computeArg env) zipped
-          varArgVals <- mapM (computeArg env) $ zippedVarArgs varargs
+          argVals <- mapM (computeArg env) (zipped params args)
+          varArgVals <- mapM (computeArg env) $ zippedVarArgs params args varargs
           apply func (argVals ++ varArgVals)
 
-        where
-          computeArg env ((_, True), value) = eval env (List [Atom "quote", value])
-          computeArg env ((_, False), value) = eval env value
-
-          zipped = zip params (take (length params) args)
-          varArgs Nothing = []
-          varArgs (Just _) = drop (length params) args
-          zippedVarArgs Nothing = []
-          zippedVarArgs (Just (name, b)) = map (\var -> ((name, b), var)) (varArgs varargs)
       Primitive _ ->
         do
           argVals <- mapM (eval env) args
           apply func argVals
+      Macro params varargs body ->
+        do
+          argVals <- mapM (computeArg env) (zipped params args)
+          varArgVals <- mapM (computeArg env) $ zippedVarArgs params args varargs
+          apply (Closure params varargs body env) (argVals ++ varArgVals)
       _ -> throwError (NotFunction "Given value is not a function" $ show f)
+    where
+      computeArg env ((_, True), value) = eval env (List [Atom "quote", value])
+      computeArg env ((_, False), value) = eval env value
+
+      zipped params args = zip params (take (length params) args)
+      varArgs _ _ Nothing = []
+      varArgs params args (Just _) = drop (length params) args
+      zippedVarArgs _ _ Nothing = []
+      zippedVarArgs params args (varargs@(Just (name, b))) =
+        map (\var -> ((name, b), var)) (varArgs params args varargs)
 eval env badForm = throwError (BadSpecialForm "Unrecognized special form" badForm)
 
 makeArgument env (Atom name) = (name, False)
@@ -95,6 +105,12 @@ makeFunc varargs env params body = return $ Closure pnames varargs body env
 
 makeNormalFunc = makeFunc Nothing
 makeVarargs varargs env = makeFunc (Just $ makeArgument env varargs) env
+
+makeMacro varargs env params body = return $ Macro pnames varargs body
+  where pnames = map (makeArgument env) params
+
+makeNormalMacro = makeMacro Nothing
+makeVarargsMacro varargs env = makeMacro (Just $ makeArgument env varargs) env
 
 applyProc :: [YmirValue] -> IOThrowsError YmirValue
 applyProc [f, List args] = apply f args

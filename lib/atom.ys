@@ -1,4 +1,5 @@
 (define nil '())
+(define (null? li) (eqv? li '()))
 
 (define (not x)
   (if x
@@ -47,10 +48,21 @@
     '()
     li))
 
+(define (foldl f acc li)
+   (if (null? li)
+     acc
+     (foldl f (f acc (car li)) (cdr li))))
+
 (define (foldr f end li)
   (if (null? li)
     end
     (f (car li) (foldr f end (cdr li)))))
+
+(define (reverse li)
+  (foldl
+    (lambda (x y) (cons y x))
+    '()
+    li))
 
 (define ($$let-lambdas li body)
     (if (eqv? li '())
@@ -65,7 +77,7 @@
           ($$let-arguments lbds (cdr args))
           (list 'list (car args)))))
 
-(define (let 'pairs 'body)
+(def-macro (let 'pairs 'body)
     (eval
       ($$let-arguments
         ($$let-lambdas (map fst pairs) body)
