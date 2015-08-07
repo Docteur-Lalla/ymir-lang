@@ -7,3 +7,4 @@ src = ARGV[1]
 
 dir = src.slice(/.*\//).chop
 `rm #{dir}/*.o`
+`rm include/*.o include/*.hi`
