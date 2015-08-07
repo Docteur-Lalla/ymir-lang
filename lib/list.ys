@@ -79,3 +79,15 @@
       (if (eqv? (car s1) (car s2))
         (list=? (cdr s1) (cdr s2))
         false))))
+
+(define (take n li)
+  (if (or (null? li) (= n 0)))
+    '()
+    (cons (car li) (take (- n 1) (cdr li))))
+
+(define (drop n li)
+  (if (null? li)
+    '()
+    (if (= n 0)
+      li
+      (drop (- n 1) (cdr li)))))

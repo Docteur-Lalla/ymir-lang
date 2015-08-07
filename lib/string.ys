@@ -1,5 +1,11 @@
 (require "list.ys")
 
+(define (string-reverse str)
+  (foldl
+    (lambda (x y) (cons y x))
+    ""
+    str))
+
 (define (string-contains? str char)
   (if (null? str)
     false
@@ -43,10 +49,24 @@
       (+ 1 (string-find-first (cdr str) char)))
     -1))
 
+(define (string-find-last str char)
+  ((lambda (rev)
+    (if (= rev -1)
+      -1
+      (- (length str) 1 rev)))
+    (string-find-first (string-reverse str) char)))
+
 (define (string-at str at)
   (if (= at 0)
     (car str)
     (string-at (cdr str) (- at 1))))
+
+(define (string-at-put str at char)
+  (if (= at 0)
+    (cons char (cdr str))
+    (cons
+      (car str)
+      (string-at-put (cdr str) (- at 1) char))))
 
 (define (string-replace str from to)
   (if (null? str)
@@ -54,3 +74,14 @@
     (if (eqv? (car str) from)
       (cons to (string-replace (cdr str) from to))
       (cons (car str) (string-replace (cdr str) from to)))))
+
+(define (string-sub-replace str from to)
+  (if (null? str)
+    ""
+    (if (string-prefix? str from)
+      (concat
+        to
+        (string-sub-replace (drop (length from) str) from to))
+      (cons
+        (car str)
+        (string-sub-replace (cdr str) from to)))))
