@@ -1,0 +1,42 @@
+(require "list.ys")
+
+(define (string-contains? str char)
+  (if (null? str)
+    false
+    (if (eqv? (car str) char)
+      true
+      (string-contains? (cdr str) char))))
+
+(define (string-prefix? str sub)
+  (if (null? sub)
+    true
+    (if (< (length str) (length sub))
+      false
+      (if (eqv? (car str) (car sub))
+        (string-prefix? (cdr str) (cdr sub))
+        false))))
+
+(define (string-suffix? str sub)
+  (string-prefix? (reverse str) (reverse sub)))
+
+(define (string-sub? str sub)
+  (if
+    (or
+      (null? str)
+      (< (length str) (length sub)))
+    false
+    (if (string-prefix? str sub)
+      true
+      (string-sub? (cdr str) sub))))
+
+(define (string-find str sub)
+  (if (string-sub? str sub)
+    (if (string-prefix? str sub)
+      0
+      (+ 1 (string-find (cdr str) sub)))
+    -1))
+
+(define (string-at str at)
+  (if (= at 0)
+    (car str)
+    (string-at (cdr str) (- at 1))))
