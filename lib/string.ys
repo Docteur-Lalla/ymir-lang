@@ -36,7 +36,21 @@
       (+ 1 (string-find (cdr str) sub)))
     -1))
 
+(define (string-find-first str char)
+  (if (string-contains? str char)
+    (if (eqv? (car str) char)
+      0
+      (+ 1 (string-find-first (cdr str) char)))
+    -1))
+
 (define (string-at str at)
   (if (= at 0)
     (car str)
     (string-at (cdr str) (- at 1))))
+
+(define (string-replace str from to)
+  (if (null? str)
+    ""
+    (if (eqv? (car str) from)
+      (cons to (string-replace (cdr str) from to))
+      (cons (car str) (string-replace (cdr str) from to)))))
