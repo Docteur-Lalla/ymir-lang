@@ -33,4 +33,5 @@
     ('add . (lambda (v) (@vec $ vec3-add (v vec))))
     ('neg . (lambda () (@vec $ vec3-neg)))
     ('min . (lambda (v) (@vec $ vec3-min (v vec))))
-    ('scalar . (lambda (v) (@vec $ vec3-scalar (v vec))))))
+    ('scalar . (lambda (v) (@vec $ vec3-scalar (v vec))))
+    ('dot . (lambda (v) (@vec $ vec3-scalar v)))))
