@@ -1,0 +1,5 @@
+(load "cast.so"
+  ((c_string string)
+  (c_symbol symbol)
+  (c_integer integer)
+  (c_float float)))
