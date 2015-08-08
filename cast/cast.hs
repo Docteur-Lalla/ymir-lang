@@ -14,6 +14,7 @@ string [value] = (return . String . showValue) value
 string values = throwError $ NumArgs 1 values
 
 symbol :: [YmirValue] -> ThrowsError YmirValue
+symbol [val@(Atom a)] = return val
 symbol [String s] = (return . Atom) s
 symbol [Char c] = (return . Atom . show) c
 symbol [x] = throwError $ TypeMismatch "string or char" x
@@ -21,14 +22,14 @@ symbol values = throwError $ NumArgs 1 values
 
 integer :: [YmirValue] -> ThrowsError YmirValue
 integer [String s] = return $ Number (Integer (read s))
--- integer [Number (Float f)] = return $ Number (Integer f)
+integer [Number (Float f)] = return $ Number (Integer (round f))
 integer [val@(Number (Integer _))] = return val
 integer [x] = throwError $ TypeMismatch "string or number" x
 integer values = throwError $ NumArgs 1 values
 
 float :: [YmirValue] -> ThrowsError YmirValue
 float [String s] = return $ Number (Float (read s))
--- float [Number (Integer i)] = return $ Number (Float (fromIntegral i))
+float [Number (Integer i)] = return $ Number (Float (fromIntegral i))
 float [val@(Number (Float _))] = return val
 float [x] = throwError $ TypeMismatch "string or number" x
 float values = throwError $ NumArgs 1 values
