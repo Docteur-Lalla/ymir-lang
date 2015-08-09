@@ -46,6 +46,21 @@ apply _ eval (Closure paramPair varargPair body env) args =
     then throwError $ NumArgs (num $ makeParams paramPair) args
     else (liftIO $ bindVars env $ zip (makeParams paramPair) args) >>=
       bindVarArgs (remainingArgs paramPair args) (varargs varargPair) >>= evalBody eval body
+apply env eval (Macro paramPair varargPair body) args =
+  if num (makeParams paramPair) /= num args && varargs (varargPair) == Nothing
+    then throwError $ NumArgs (num $ makeParams paramPair) args
+    else liftM last $ mapM (eval env) res
+
+  where
+    replaceEach [] var = var
+    replaceEach (x:xs) var = replaceEach xs (replaceOccurence x var)
+
+    res = map (replaceEach arguments) body
+    arguments = named ++ variables
+    named = zip (makeParams paramPair) args
+    variables = case (varargs varargPair) of
+      Nothing -> []
+      Just name -> [(name, List $ remainingArgs paramPair args)]
 
 makeParams paramPair = map fst paramPair
 varargs Nothing = Nothing
@@ -59,3 +74,15 @@ evalBody eval body env = liftM last $ mapM (eval env) body
 bindVarArgs remainingArgs arg env = case arg of
   Just argName -> liftIO $ bindVars env [(argName, List remainingArgs)]
   Nothing -> return env
+
+replaceOccurence :: (String, YmirValue) -> YmirValue -> YmirValue
+replaceOccurence (arg, Atom a') (Atom a)
+  | a == arg = List [Atom "quote", Atom a']
+  | otherwise = Atom a
+replaceOccurence (arg, val) (Atom a)
+  | a == arg = val
+  | otherwise = Atom a
+replaceOccurence (arg, val) (List li) = List $ map (replaceOccurence (arg, val)) li
+replaceOccurence (arg, val) (DottedList x xs) =
+  DottedList (map (replaceOccurence (arg, val)) x) (replaceOccurence (arg, val) xs)
+replaceOccurence (_, _) var = var

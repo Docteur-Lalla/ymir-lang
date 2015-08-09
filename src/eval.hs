@@ -82,7 +82,7 @@ eval env (List (f:args)) =
         do
           argVals <- mapM (computeArg env) (zipped params args)
           varArgVals <- mapM (computeArg env) $ zippedVarArgs params args varargs
-          apply env eval (Closure params varargs body env) (argVals ++ varArgVals)
+          apply env eval func (argVals ++ varArgVals)
       _ -> throwError (NotFunction "Given value is not a function" $ show f)
     where
       computeArg env ((_, True), value) = eval env (List [Atom "quote", value])
