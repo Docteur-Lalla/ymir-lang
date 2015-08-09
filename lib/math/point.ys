@@ -5,8 +5,7 @@
 
 (define (square x) (* x x))
 
-(define point
-  (class "Point" (@x @y)
+(def-class Point (@x @y)
     (attr-reader 'x @x)
     (attr-writer 'x= @x)
     (attr-reader 'y @y)
@@ -15,4 +14,4 @@
       (let
         ((x (square (- (p x) (@x get))))
         (y (square (- (p y) (@y get)))))
-        (sqrt (+ x y)))))))
+        (sqrt (+ x y))))))

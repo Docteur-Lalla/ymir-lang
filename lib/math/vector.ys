@@ -27,11 +27,10 @@
     (* (vec3-y v1) (vec3-y v2))
     (* (vec3-z v1) (vec3-z v2))))
 
-(define new-vector3
-  (class "Vector3" (@vec)
+(def-class Vector3 (@vec)
     (attr-reader 'vec @vec)
     ('add . (lambda (v) (@vec $ vec3-add (v vec))))
     ('neg . (lambda () (@vec $ vec3-neg)))
     ('min . (lambda (v) (@vec $ vec3-min (v vec))))
     ('scalar . (lambda (v) (@vec $ vec3-scalar (v vec))))
-    ('dot . (lambda (v) (@vec $ vec3-scalar v)))))
+    ('dot . (lambda (v) (@vec $ vec3-scalar v))))
