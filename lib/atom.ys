@@ -65,21 +65,21 @@
     li))
 
 (define ($$let-lambdas li body)
-    (if (eqv? li '())
-        body
-        (list 'lambda (list (car li))
-          ($$let-lambdas (cdr li) body))))
+  (if (eqv? li '())
+    body
+    (list 'lambda (list (car li))
+      ($$let-lambdas (cdr li) body))))
 
 (define ($$let-arguments lbds args)
-    (if (eqv? args '())
-        lbds
-        (list 'apply
-          ($$let-arguments lbds (cdr args))
-          (list 'list (car args)))))
+  (if (eqv? args '())
+    lbds
+    (list 'apply
+      ($$let-arguments lbds (cdr args))
+      (list 'list (car args)))))
 
 (def-macro (let 'pairs 'body)
-    (eval
-      ($$let-arguments
-        ($$let-lambdas (map fst pairs) body)
-        (map snd (reverse pairs)))
-      '()))
+  (eval
+    ($$let-arguments
+      ($$let-lambdas (map fst 'pairs) 'body)
+      (map snd (reverse 'pairs)))
+    '()))
