@@ -11,6 +11,10 @@
   (c_acosh acosh)
   (c_asinh asinh)
   (c_atanh atanh)
+  (c_log log ln)
+  (c_log10 log10)
+  (c_log2 log2)
+  (c_pow pow)
   (c_sqrt sqrt)
   (c_ceil ceil)
   (c_floor floor)))
@@ -25,10 +29,3 @@
     (if (integer? x)
       0
       0.0)))
-
-(define (pow x n)
-  (if (= n 0)
-    1
-    (if (= n 1)
-      x
-      (* x (pow x (- n 1))))))
