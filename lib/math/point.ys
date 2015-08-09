@@ -1,0 +1,18 @@
+(require "class.ys")
+(require "atom.ys")
+(load "math.so"
+  ((c_sqrt sqrt)))
+
+(define (square x) (* x x))
+
+(define point
+  (class "Point" (@x @y)
+    (attr-reader 'x @x)
+    (attr-writer 'x= @x)
+    (attr-reader 'y @y)
+    (attr-writer 'y= @y)
+    ('distance . (lambda (p)
+      (let
+        ((x (square (- (p x) (@x get))))
+        (y (square (- (p y) (@y get)))))
+        (sqrt (+ x y)))))))
