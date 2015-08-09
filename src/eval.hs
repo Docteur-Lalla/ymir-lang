@@ -4,6 +4,7 @@ import Error
 import Control.Monad.Error
 import Primitives
 import Variable
+import Function
 import System.Environment
 import System.Directory
 import System.FilePath
@@ -45,7 +46,7 @@ eval env (List (Atom "apply":f:args)) =
   do
     func <- eval env f
     argVals <- mapM (eval env) args
-    applyProc (func:argVals)
+    applyProc env eval (func:argVals)
 eval env (List [Atom "set!", Atom var, form]) = eval env form >>= setVar env var
 eval env (List (Atom "eval":list:env')) = eval env list >>= eval env
 eval env (List [Atom "define", Atom var, form]) = eval env form >>= defineVar env var
@@ -71,17 +72,17 @@ eval env (List (f:args)) =
         do
           argVals <- mapM (computeArg env) (zipped params args)
           varArgVals <- mapM (computeArg env) $ zippedVarArgs params args varargs
-          apply func (argVals ++ varArgVals)
+          apply env eval func (argVals ++ varArgVals)
 
       Primitive _ ->
         do
           argVals <- mapM (eval env) args
-          apply func argVals
+          apply env eval func argVals
       Macro params varargs body ->
         do
           argVals <- mapM (computeArg env) (zipped params args)
           varArgVals <- mapM (computeArg env) $ zippedVarArgs params args varargs
-          apply (Closure params varargs body env) (argVals ++ varArgVals)
+          apply env eval (Closure params varargs body env) (argVals ++ varArgVals)
       _ -> throwError (NotFunction "Given value is not a function" $ show f)
     where
       computeArg env ((_, True), value) = eval env (List [Atom "quote", value])
@@ -94,47 +95,6 @@ eval env (List (f:args)) =
       zippedVarArgs params args (varargs@(Just (name, b))) =
         map (\var -> ((name, b), var)) (varArgs params args varargs)
 eval env badForm = throwError (BadSpecialForm "Unrecognized special form" badForm)
-
-makeArgument env (Atom name) = (name, False)
-makeArgument env (List [Atom "quote", Atom name]) = (name, True)
-makeArgument env value = ("", False)
-
-makeFunc varargs env params body = return $ Closure pnames varargs body env
-
-  where pnames = map (makeArgument env) params
-
-makeNormalFunc = makeFunc Nothing
-makeVarargs varargs env = makeFunc (Just $ makeArgument env varargs) env
-
-makeMacro varargs env params body = return $ Macro pnames varargs body
-  where pnames = map (makeArgument env) params
-
-makeNormalMacro = makeMacro Nothing
-makeVarargsMacro varargs env = makeMacro (Just $ makeArgument env varargs) env
-
-applyProc :: [YmirValue] -> IOThrowsError YmirValue
-applyProc [f, List args] = apply f args
-applyProc (f:args) = apply f args
-
-apply :: YmirValue -> [YmirValue] -> IOThrowsError YmirValue
-apply (Primitive f) args = liftThrows $ f args
-apply (Closure paramPair varargPair body env) args =
-  if num params /= num args && varargs == Nothing
-    then throwError $ NumArgs (num params) args
-    else (liftIO $ bindVars env $ zip params args) >>=
-      bindVarArgs varargs >>= evalBody
-
-  where
-    params = map fst paramPair
-    varargs = makeVarargs varargPair
-    makeVarargs Nothing = Nothing
-    makeVarargs (Just (name, b)) = Just name
-    remainingArgs = drop (length params) args
-    num = toInteger . length
-    evalBody env = liftM last $ mapM (eval env) body
-    bindVarArgs arg env = case arg of
-      Just argName -> liftIO $ bindVars env [(argName, List $ remainingArgs)]
-      Nothing -> return env
 
 requireFile env relative dir file =
   do
