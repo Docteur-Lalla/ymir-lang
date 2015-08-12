@@ -3,7 +3,7 @@
 dst = ARGV[0]
 src = ARGV[1]
 
-`ghc --make -dynamic -shared -fPIC -o #{dst} include/value.hs include/ffi.hs #{src}`
+`ghc --make -dynamic -shared -fPIC -o #{dst} include/*.hs #{src}`
 
 dir = src.slice(/.*\//).chop
 `rm #{dir}/*.o`

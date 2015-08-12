@@ -1,7 +1,7 @@
 #ifndef YMIR_YMIR_H
 #define YMIR_YMIR_H
 
-#include "ffi_stub.h"
+#include "extern_stub.h"
 
 #define YMIR_RETURN(value) return ymir_return(value)
 #define YMIR_THROW_NUMBER_ARGS(num, args, size) return ymir_throwNumberArguments(num, args, size)

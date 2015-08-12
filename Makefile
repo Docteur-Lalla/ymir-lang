@@ -1,6 +1,6 @@
-SRC=src/value.hs src/error.hs src/variable.hs src/primitives.hs src/ffi.hs src/function.hs src/eval.hs src/parser.hs src/ymir.hs
+SRC=src/value.hs src/error.hs src/variable.hs src/primitives.hs src/ffi.hs src/function.hs src/eval.hs src/parser.hs src/extern.hs src/ymir.hs
 DST=bin/ymir
-INCLUDE=include/value.hs include/ffi.hs include/ffi_stub.h
+INCLUDE=include/value.hs include/extern.hs include/extern_stub.h
 
 all: $(DST) $(INCLUDE) clean
 
@@ -8,9 +8,8 @@ $(DST): $(SRC)
 	ghc -dynamic -o $(DST) $(SRC)
 
 $(INCLUDE): $(SRC)
-	cp src/value.hs include/value.hs
-	cp src/ffi.hs include/ffi.hs
-	cp src/ffi_stub.h include/ffi_stub.h
+	cp src/*.hs include/
+	cp src/extern_stub.h include/extern_stub.h
 
 clean: $(INCLUDE)
 	rm src/*.hi
