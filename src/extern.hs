@@ -9,7 +9,7 @@ import Foreign.StablePtr
 import Foreign.Marshal.Array
 import Foreign.C.String
 import System.IO.Unsafe
-import Control.Monad.Error
+import Control.Monad.Except
 
 -- YmirValue creation functions
 ymir_newInteger i = unsafePerformIO $ newStablePtr (Number $ Integer i)
@@ -88,6 +88,13 @@ ymir_isPointer ptr = unsafePerformIO $
     case val of
       Pointer _ -> return True
       otherwise -> return False
+ymir_isFunction ptr = unsafePerformIO $
+  do
+    val <- deRefStablePtr ptr
+    case val of
+      Primitive _ -> return True
+      Closure _ _ _ _ -> return True
+      otherwise -> return False
 
 -- Getters
 ymir_getInteger ptr = unsafePerformIO $
@@ -145,7 +152,7 @@ ymir_functionCall fptr ary size = unsafePerformIO $
     f <- deRefStablePtr fptr
     ptrlist <- peekArray size ary
     list <- mapM deRefStablePtr ptrlist
-    res <- runErrorT (applyFunction eval f list)
+    res <- runExceptT (applyFunction eval f list)
     newStablePtr res
 
 -- Error handling functions
@@ -183,6 +190,7 @@ foreign export ccall ymir_isString :: ValuePtr -> Bool
 foreign export ccall ymir_isSymbol :: ValuePtr -> Bool
 foreign export ccall ymir_isList :: ValuePtr -> Bool
 foreign export ccall ymir_isPointer :: ValuePtr -> Bool
+foreign export ccall ymir_isFunction :: ValuePtr -> Bool
 
 foreign export ccall ymir_getInteger :: ValuePtr -> Int
 foreign export ccall ymir_getFloat :: ValuePtr -> Double

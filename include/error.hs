@@ -1,6 +1,6 @@
 module Error where
 import Value
-import Control.Monad.Error
+import Control.Monad.Except
 import Text.ParserCombinators.Parsec (ParseError)
 
 trapError action = catchError action (return . show)

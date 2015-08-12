@@ -1,7 +1,7 @@
 module Eval where
 import Value
 import Error
-import Control.Monad.Error
+import Control.Monad.Except
 import Primitives
 import Variable
 import Function

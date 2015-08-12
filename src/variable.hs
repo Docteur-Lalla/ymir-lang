@@ -1,7 +1,7 @@
 module Variable where
 import Value
 import Error
-import Control.Monad.Error
+import Control.Monad.Except
 import Data.IORef
 
 nullEnv :: IO Env
@@ -12,7 +12,7 @@ liftThrows (Left err) = throwError err
 liftThrows (Right val) = return val
 
 runIOThrows :: IOThrowsError String -> IO String
-runIOThrows action = runErrorT (trapError action) >>= return . extractValue
+runIOThrows action = runExceptT (trapError action) >>= return . extractValue
 
 isBound :: Env -> String -> IO Bool
 isBound env var = readIORef env >>= return . maybe False (const True) . lookup var

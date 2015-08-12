@@ -2,7 +2,7 @@ module Parser (readExpr, readExprList) where
 import Value
 import Error
 import Control.Monad
-import Control.Monad.Error
+import Control.Monad.Except
 import Text.ParserCombinators.Parsec hiding (spaces)
 
 spaces :: Parser ()

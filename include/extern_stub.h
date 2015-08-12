@@ -19,6 +19,7 @@ extern HsBool ymir_isString(HsStablePtr a1);
 extern HsBool ymir_isSymbol(HsStablePtr a1);
 extern HsBool ymir_isList(HsStablePtr a1);
 extern HsBool ymir_isPointer(HsStablePtr a1);
+extern HsBool ymir_isFunction(HsStablePtr a1);
 extern HsInt ymir_getInteger(HsStablePtr a1);
 extern HsDouble ymir_getFloat(HsStablePtr a1);
 extern HsChar ymir_getChar(HsStablePtr a1);

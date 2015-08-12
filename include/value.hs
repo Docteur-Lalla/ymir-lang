@@ -1,7 +1,7 @@
 module Value where
 import Foreign.Ptr
 import Data.IORef
-import Control.Monad.Error
+import Control.Monad.Except
 import Text.ParserCombinators.Parsec (ParseError)
 
 type Env = IORef [(String, IORef YmirValue)]
@@ -60,12 +60,8 @@ data YmirError = NumArgs Integer [YmirValue]
   | UnboundVariable String String
   | Default String
 
-instance Error YmirError where
-  noMsg = Default "An error has occured"
-  strMsg = Default
-
 type ThrowsError = Either YmirError
-type IOThrowsError = ErrorT YmirError IO
+type IOThrowsError = ExceptT YmirError IO
 
 data YmirValue = Atom String
   | List [YmirValue]
