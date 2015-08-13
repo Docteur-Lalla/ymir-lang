@@ -3,7 +3,7 @@ import Value
 import Error
 import Variable
 import Parser
-import Control.Monad.Error
+import Control.Monad.Except
 import System.IO
 import Parser
 import System.Directory

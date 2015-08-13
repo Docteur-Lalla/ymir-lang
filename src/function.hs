@@ -13,7 +13,7 @@ module Function
 import Value
 import Error
 import Variable
-import Control.Monad.Error
+import Control.Monad.Except
 import System.IO.Unsafe
 
 type EvalFunction = Env -> YmirValue -> IOThrowsError YmirValue

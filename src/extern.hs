@@ -39,62 +39,20 @@ ymir_return ptr = unsafePerformIO $
     newStablePtr (return val)
 
 -- Type checking functions
-ymir_isInteger ptr = unsafePerformIO $
+ymir_isA ytype ptr = unsafePerformIO $
   do
     val <- deRefStablePtr ptr
-    case val of
-      Number (Integer _) -> return True
-      otherwise -> return False
-ymir_isFloat ptr = unsafePerformIO $
-  do
-    val <- deRefStablePtr ptr
-    case val of
-      Number (Float _) -> return True
-      otherwise -> return False
-ymir_isChar ptr = unsafePerformIO $
-  do
-    val <- deRefStablePtr ptr
-    case val of
-      Char _ -> return True
-      otherwise -> return False
-ymir_isBool ptr = unsafePerformIO $
-  do
-    val <- deRefStablePtr ptr
-    case val of
-      Bool _ -> return True
-      otherwise -> return False
-ymir_isString ptr = unsafePerformIO $
-  do
-    val <- deRefStablePtr ptr
-    case val of
-      String _ -> return True
-      otherwise -> return False
-ymir_isSymbol ptr = unsafePerformIO $
-  do
-    val <- deRefStablePtr ptr
-    case val of
-      Atom _ -> return True
-      otherwise -> return False
-ymir_isList ptr = unsafePerformIO $
-  do
-    val <- deRefStablePtr ptr
-    case val of
-      List _ -> return True
-      String _ -> return True -- String are [Char]
-      otherwise -> return False
-ymir_isPointer ptr = unsafePerformIO $
-  do
-    val <- deRefStablePtr ptr
-    case val of
-      Pointer _ -> return True
-      otherwise -> return False
-ymir_isFunction ptr = unsafePerformIO $
-  do
-    val <- deRefStablePtr ptr
-    case val of
-      Primitive _ -> return True
-      Closure _ _ _ _ -> return True
-      otherwise -> return False
+    return $ val `is_a` ytype
+
+ymir_isInteger = ymir_isA IntegerType
+ymir_isFloat = ymir_isA FloatType
+ymir_isChar = ymir_isA CharType
+ymir_isBool = ymir_isA BoolType
+ymir_isString = ymir_isA StringType
+ymir_isList = ymir_isA ListType
+ymir_isPointer = ymir_isA PointerType
+ymir_isFunction = ymir_isA FunctionType
+ymir_isSymbol = ymir_isA SymbolType
 
 -- Getters
 ymir_getInteger ptr = unsafePerformIO $

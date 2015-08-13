@@ -114,3 +114,38 @@ unwordsList :: [YmirValue] -> String
 unwordsList = unwords . map showValue
 
 instance Show YmirValue where show = showValue
+
+data YmirType = IntegerType
+  | FloatType
+  | NumberType
+  | ListType
+  | DottedListType
+  | StringType
+  | CharType
+  | FunctionType
+  | MacroType
+  | BoolType
+  | PointerType
+  | SymbolType
+  deriving (Eq)
+
+class VariableType a where
+  typeOf :: YmirValue -> a
+  is_a :: YmirValue -> a -> Bool
+
+instance VariableType YmirType where
+  typeOf (Atom _) = SymbolType
+  typeOf (Number (Integer _)) = IntegerType
+  typeOf (Number (Float _)) = FloatType
+  typeOf (List _) = ListType
+  typeOf (DottedList _ _) = DottedListType
+  typeOf (String _) = StringType
+  typeOf (Char _) = CharType
+  typeOf (Primitive _) = FunctionType
+  typeOf (Closure _ _ _ _) = FunctionType
+  typeOf (Macro _ _ _) = MacroType
+  typeOf (Bool _) = BoolType
+  typeOf (Pointer _) = PointerType
+
+  is_a val NumberType = val `is_a` IntegerType || val `is_a` FloatType
+  is_a val ytype = ytype == (typeOf val)

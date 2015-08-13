@@ -1,7 +1,7 @@
 module Cast where
 import Value
 import FFI
-import Control.Monad.Error
+import Control.Monad.Except
 import Foreign.Ptr
 import Foreign.StablePtr
 import Foreign.Marshal.Array

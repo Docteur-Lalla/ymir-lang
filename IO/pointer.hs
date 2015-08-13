@@ -6,7 +6,7 @@ import System.IO.Unsafe
 import Foreign.StablePtr
 import Foreign.Ptr
 import Foreign.Marshal.Array
-import Control.Monad.Error
+import Control.Monad.Except
 
 makeRef value = unsafePerformIO $
   do
