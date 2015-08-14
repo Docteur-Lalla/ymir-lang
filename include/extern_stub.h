@@ -31,6 +31,8 @@ extern HsInt ymir_getList(HsStablePtr a1, HsPtr a2);
 extern HsStablePtr ymir_functionCall(HsStablePtr a1, HsPtr a2, HsInt a3);
 extern HsStablePtr ymir_throwNumberArguments(HsInt a1, HsPtr a2, HsInt a3);
 extern HsStablePtr ymir_throwTypeMismatch(HsPtr a1, HsStablePtr a2);
+extern HsBool ymir_hasThrownError(HsStablePtr a1);
+extern HsStablePtr ymir_extractReturnValue(HsStablePtr a1);
 #ifdef __cplusplus
 }
 #endif

@@ -138,6 +138,22 @@ ymir_throwTypeMismatch str ptr = unsafePerformIO $
     s <- peekCString str
     newStablePtr (throwError (TypeMismatch s val))
 
+ymir_hasThrownError :: ReturnValuePtr -> Bool
+ymir_hasThrownError ptr = unsafePerformIO $
+  do
+    val <- deRefStablePtr ptr
+    case val of
+      Left _ -> return True
+      Right _ -> return False
+
+ymir_extractReturnValue :: ReturnValuePtr -> ValuePtr
+ymir_extractReturnValue ptr = unsafePerformIO $
+  do
+    val <- deRefStablePtr ptr
+    case val of
+      Left _ -> newStablePtr (List [])
+      Right v -> newStablePtr v
+
 -- Foreign Function Interface
 foreign export ccall ymir_newInteger :: Int -> ValuePtr
 foreign export ccall ymir_newFloat :: Double -> ValuePtr
@@ -173,3 +189,6 @@ foreign export ccall ymir_functionCall :: ValuePtr -> Ptr ValuePtr -> Int -> Ret
 
 foreign export ccall ymir_throwNumberArguments :: Int -> Ptr ValuePtr -> Int -> ReturnValuePtr
 foreign export ccall ymir_throwTypeMismatch :: CString -> ValuePtr -> ReturnValuePtr
+
+foreign export ccall ymir_hasThrownError :: ReturnValuePtr -> Bool
+foreign export ccall ymir_extractReturnValue :: ReturnValuePtr -> ValuePtr

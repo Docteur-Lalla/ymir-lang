@@ -114,9 +114,10 @@ parseExpr =
     return x
 
 readOrThrow :: String -> Parser a -> String -> ThrowsError a
-readOrThrow filename parser input = case parse parser filename input of
-  Left err -> throwError $ Parser err
-  Right val -> return val
+readOrThrow filename parser input =
+  case parse parser filename input of
+    Left err -> throwError $ Parser err
+    Right val -> return val
 
 readExpr :: String -> ThrowsError YmirValue
 readExpr = readOrThrow "ymir" parseExpr
