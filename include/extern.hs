@@ -103,6 +103,16 @@ ymir_getPointer ptr = unsafePerformIO $
       Pointer ptr -> return ptr
       otherwise -> return nullPtr
 
+ymir_getList ptr ary = unsafePerformIO $
+  do
+    val <- deRefStablePtr ptr
+    case val of
+      List li ->
+        do
+          mapM newStablePtr li >>= pokeArray ary
+          return $ length li
+      otherwise -> return (-1)
+
 -- Function call management
 ymir_functionCall :: ValuePtr -> Ptr ValuePtr -> Int -> ReturnValuePtr
 ymir_functionCall fptr ary size = unsafePerformIO $
@@ -157,6 +167,7 @@ foreign export ccall ymir_getBool :: ValuePtr -> Bool
 foreign export ccall ymir_getString :: ValuePtr -> CString
 foreign export ccall ymir_getSymbol :: ValuePtr -> CString
 foreign export ccall ymir_getPointer :: ValuePtr -> Ptr ()
+foreign export ccall ymir_getList :: ValuePtr -> Ptr ValuePtr -> Int
 
 foreign export ccall ymir_functionCall :: ValuePtr -> Ptr ValuePtr -> Int -> ReturnValuePtr
 

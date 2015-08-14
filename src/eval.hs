@@ -72,7 +72,12 @@ eval env (List (f:args)) =
         do
           argVals <- mapM (computeArg env) (zipped params args)
           varArgVals <- mapM (computeArg env) $ zippedVarArgs params args varargs
-          apply env eval func (argVals ++ varArgVals)
+          if num args /= num params && varargs == Nothing
+            then
+              do
+                dropped <- mapM (eval env) (drop (length params) args)
+                throwError $ NumArgs (num params) (argVals ++ dropped)
+            else apply env eval func (argVals ++ varArgVals)
 
       Primitive _ ->
         do
@@ -82,9 +87,15 @@ eval env (List (f:args)) =
         do
           argVals <- mapM (computeArg env) (zipped params args)
           varArgVals <- mapM (computeArg env) $ zippedVarArgs params args varargs
-          apply env eval func (argVals ++ varArgVals)
+          if num args /= num params && varargs == Nothing
+            then
+              do
+                dropped <- mapM (eval env) (drop (length params) args)
+                throwError $ NumArgs (num params) (argVals ++ dropped)
+            else apply env eval func (argVals ++ varArgVals)
       _ -> throwError (NotFunction "Given value is not a function" $ show f)
     where
+      num = toInteger . length
       computeArg env ((_, True), value) = eval env (List [Atom "quote", value])
       computeArg env ((_, False), value) = eval env value
 
