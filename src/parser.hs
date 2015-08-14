@@ -9,7 +9,7 @@ spaces :: Parser ()
 spaces = skipMany1 space
 
 symbol :: Parser Char
-symbol = oneOf ":!$%&|*+-/;<=?>@^_~#"
+symbol = oneOf ":!$%&|*+-/<=?>@^_~#"
 
 parseEscape :: Bool -> Parser Char
 parseEscape str =
@@ -115,11 +115,30 @@ parseExpr =
 
 readOrThrow :: String -> Parser a -> String -> ThrowsError a
 readOrThrow filename parser input =
-  case parse parser filename input of
+  case parse skipComments filename input of
     Left err -> throwError $ Parser err
-    Right val -> return val
+    Right val ->
+      case parse parser filename val of
+        Left err -> throwError $ Parser err
+        Right val -> return val
 
 readExpr :: String -> ThrowsError YmirValue
 readExpr = readOrThrow "ymir" parseExpr
 
 readExprList filename = readOrThrow filename (endBy parseExpr spaces)
+
+comment :: Parser ()
+comment = char ';' >> manyTill anyChar newline >> return ()
+
+skipComments :: Parser String
+skipComments =
+  do
+    optional comment
+    codes <- sepBy notComment comment
+    optional comment
+    return $ foldl (\x y -> x `op` y) "" codes
+
+  where
+    notComment = manyTill anyChar (lookAhead (comment <|> eof))
+    "" `op` xs = xs
+    x `op` xs = x ++ "\n" ++ xs
