@@ -6,17 +6,29 @@
 (define (list . objs) objs)
 (define (do . instrs) (car (reverse instrs)))
 
+(define (embed val)
+   ((lambda (f val)
+     (f f val))
+     (lambda (self val) (sfsfs)) val))
+
 (define (class classname 'attrs . 'methods)
   (lambda vals
-    ((lambda (obj)
-      (do
-        (obj self= obj)
-        obj))
-      (apply (eval (list 'lambda (cons '@self attrs)
-        (cons 'object
-          (cons (quote ('class . (lambda () classname)))
-            (cons (quote (attr-writer 'self= @self)) methods)))))
-        (cons (new-pointer '()) (map new-pointer vals))))))
+    ((lambda (f vals)
+      (f f vals))
+      (lambda (self vals)
+        ((lambda (obj)
+          (do
+            (obj self= obj)
+            obj))
+          (apply (eval (list 'lambda (cons '@class (cons '@self attrs))
+            (cons 'object
+              (cons (quote ('class . (lambda () @class)))
+              (cons (quote ('classname . (lambda () classname)))
+                (cons (quote (attr-writer 'self= @self)) methods))))))
+            (cons
+              (lambda vals (self self vals))
+              (cons (new-pointer '()) (map new-pointer vals))))))
+      vals)))
 
 (def-macro (def-class 'name 'attrs . 'methods)
   (eval (list

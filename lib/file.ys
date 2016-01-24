@@ -1,0 +1,10 @@
+(load "file"
+  ((c_file_open file-open)
+  (c_file_close file-close)
+  (c_file_getline file-get-line)))
+(require "class.ys")
+
+(def-class File (@file)
+  ('open . (lambda (filename) (@file set (file-open filename))))
+  ('close . (lambda () (@file $ file-close)))
+  ('get-line . (lambda () (@file $ file-get-line))))

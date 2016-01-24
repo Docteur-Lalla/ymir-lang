@@ -27,10 +27,17 @@
     (* (vec3-y v1) (vec3-y v2))
     (* (vec3-z v1) (vec3-z v2))))
 
+(define (vec3-mul v n)
+  (vector3
+    (* (vec3-x v) n)
+    (* (vec3-y v) n)
+    (* (vec3-z v) n)))
+
 (def-class Vector3 (@vec)
     (attr-reader 'vec @vec)
-    ('add . (lambda (v) (@vec $ vec3-add (v vec))))
-    ('neg . (lambda () (@vec $ vec3-neg)))
-    ('min . (lambda (v) (@vec $ vec3-min (v vec))))
+    ('add . (lambda (v) (@class (@vec $ vec3-add (v vec)))))
+    ('neg . (lambda () (@class (@vec $ vec3-neg))))
+    ('min . (lambda (v) (@class (@vec $ vec3-min (v vec)))))
+    ('mul . (lambda (n) (@class (@vec $ vec3-mul n))))
     ('scalar . (lambda (v) (@vec $ vec3-scalar (v vec))))
     ('dot . (lambda (v) (@vec $ vec3-scalar v))))

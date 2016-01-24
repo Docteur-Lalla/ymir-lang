@@ -1,0 +1,11 @@
+(require "list.ys")
+
+(define (do . instrs)
+  (car (reverse instrs)))
+
+(def-macro (while 'cond 'body)
+  (if (eval cond)
+    (do
+      (eval body)
+      (while cond body))
+    '()))

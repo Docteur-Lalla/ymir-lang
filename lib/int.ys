@@ -1,0 +1,13 @@
+(require "class.ys")
+
+(def-class Int (@i)
+  (attr-reader 'int @i)
+  (attr-writer '= @i)
+  ('+ . (lambda (other) (+ (@i get) (other int))))
+  ('- . (lambda (other) (+ (@i get) (other int))))
+  ('* . (lambda (other) (+ (@i get) (other int))))
+  ('/ . (lambda (other) (+ (@i get) (other int))))
+  ('succ . (lambda ()
+    (+ (@i get) 1)))
+  ('pred . (lambda ()
+    (- (@i get) 1))))
