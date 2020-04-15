@@ -24,15 +24,15 @@ makeArgument env (Atom name) = (name, False)
 makeArgument env (List [Atom "quote", Atom name]) = (name, True)
 makeArgument env value = ("", False)
 
-makeFunc :: Maybe (String, Bool) -> Env -> [YmirValue] -> [YmirValue] -> IOThrowsError YmirValue
-makeFunc varargs env params body = return $ Closure pnames varargs body env
+makeFunc :: Maybe (String, Bool) -> Env -> [YmirValue] -> [YmirValue] -> YmirValue
+makeFunc varargs env params body = Closure pnames varargs body env
   where pnames = map (makeArgument env) params
 
 makeNormalFunc = makeFunc Nothing
 makeVarargs varargs env = makeFunc (Just $ makeArgument env varargs) env
 
-makeMacro :: Maybe (String, Bool) -> Env -> [YmirValue] -> [YmirValue] -> IOThrowsError YmirValue
-makeMacro varargs env params body = return $ Macro pnames varargs body
+makeMacro :: Maybe (String, Bool) -> Env -> [YmirValue] -> [YmirValue] -> YmirValue
+makeMacro varargs env params = Macro pnames varargs
   where pnames = map (makeArgument env) params
 
 makeNormalMacro = makeMacro Nothing
