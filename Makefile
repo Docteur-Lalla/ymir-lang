@@ -1,6 +1,23 @@
-SRC=src/value.hs src/error.hs src/primitives.hs src/ffi.hs src/function.hs src/environment.hs src/interpreter.hs src/parser.hs src/ymir.hs
+SRC=src/value.hs \
+		src/error.hs \
+		src/primitives.hs \
+		src/ffi.hs \
+		src/function.hs \
+		src/environment.hs \
+		src/interpreter.hs \
+		src/parser.hs \
+		src/ymir.hs
+
 DST=bin/ymir
-INCLUDE=include/value.hs include/error.hs include/primitives.hs include/ffi.hs include/function.hs include/environment.hs include/interpreter.hs include/parser.hs include/extern_stub.h
+INCLUDE=include/value.hs \
+				include/error.hs \
+				include/primitives.hs \
+				include/ffi.hs \
+				include/function.hs \
+				include/environment.hs \
+				include/interpreter.hs \
+				include/parser.hs \
+				include/extern_stub.h
 
 all: $(DST) $(INCLUDE) clean
 
