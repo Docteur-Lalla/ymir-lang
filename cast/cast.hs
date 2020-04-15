@@ -10,7 +10,7 @@ import System.IO.Unsafe
 type HaskellYmirFunction = [YmirValue] -> ThrowsError YmirValue
 
 string :: [YmirValue] -> ThrowsError YmirValue
-string [value] = (return . String . showValue) value
+string [value] = (return . String . show) value
 string values = throwError $ NumArgs 1 values
 
 symbol :: [YmirValue] -> ThrowsError YmirValue

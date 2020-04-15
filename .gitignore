@@ -2,3 +2,9 @@ bin/
 .nvimrc
 include/*.hs
 include/extern_stub.h
+cast/cast.hi
+cast/cast_stub.h
+lib/IO
+lib/math
+lib/pointer
+lib/file

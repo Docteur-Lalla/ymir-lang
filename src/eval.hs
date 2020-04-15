@@ -75,10 +75,9 @@ eval env (List (f:args)) =
           argVals <- computeArgM (zipped params args)
           varArgVals <- computeArgM $ zippedVarArgs params args varargs
           if num args /= num params && isNothing varargs
-            then
-              do
-                dropped <- mapM (eval env) (drop (length params) args)
-                throwError $ NumArgs (num params) (argVals ++ dropped)
+            then do
+              dropped <- mapM (eval env) (drop (length params) args)
+              throwError $ NumArgs (num params) (argVals ++ dropped)
             else apply env eval func (argVals ++ varArgVals)
 
       Primitive _ ->
@@ -90,10 +89,9 @@ eval env (List (f:args)) =
           argVals <- mapM (computeArg env) (zipped params args)
           varArgVals <- mapM (computeArg env) $ zippedVarArgs params args varargs
           if num args /= num params && isNothing varargs
-            then
-              do
-                dropped <- mapM (eval env) (drop (length params) args)
-                throwError $ NumArgs (num params) (argVals ++ dropped)
+            then do
+              dropped <- mapM (eval env) (drop (length params) args)
+              throwError $ NumArgs (num params) (argVals ++ dropped)
             else apply env eval func (argVals ++ varArgVals)
       _ -> throwError (NotFunction "Given value is not a function" $ show f)
     where
@@ -109,11 +107,16 @@ eval env (List (f:args)) =
         map (\var -> ((name, b), var)) (varArgs params args varargs)
 eval env badForm = throwError (BadSpecialForm "Unrecognized special form" badForm)
 
+-- |Load an Ymir source file and execute its contents.
+requireFile :: Env -> Bool -> String -> String -> IOThrowsError YmirValue
 requireFile env relative dir file =
   do
     file' <- getCurrentFile env
     dir' <- getCurrentDir env
     setCurrentFile env (String file)
+    -- If the command is require-relative, the current directory variable is
+    -- computed from the current directory, otherwise the given directory is
+    -- used as an absolute path.
     if relative
       then setCurrentDir env (String $ normalise (dirstr dir' ++ "/" ++ dir))
       else setCurrentDir env (String $ normalise dir)
@@ -133,6 +136,7 @@ generateBindings assoc (b@(sym, proc):xs) =
       Nothing -> b : generateBindings assoc xs
       Just names -> map (\name -> (name, proc)) names ++ generateBindings assoc xs
 
+generateNames :: [YmirValue] -> [(String, [String])]
 generateNames [] = []
 generateNames (Atom n:xs) = generateNames xs
 generateNames (List (Atom sym:names):xs) = (sym, map toString names) : generateNames xs
@@ -141,6 +145,7 @@ generateNames (List (Atom sym:names):xs) = (sym, map toString names) : generateN
     toString _ = ""
 generateNames _ = []
 
+loadModule :: Env -> Bool -> String -> [YmirValue] -> IOThrowsError YmirValue
 loadModule env relative mod syms =
   do
     primitives <- if relative
@@ -156,7 +161,7 @@ loadModule env relative mod syms =
     getVar env (fst (last bindings))
 
   where
-    dir = "/home/chem/prgm/ymir/lib/"
+    dir = "/home/lalla/prgm/ymir-lang/lib/"
     symbols = getSymbols syms
     getSymbols [] = []
     getSymbols (Atom x:xs) = x : getSymbols xs
