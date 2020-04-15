@@ -91,34 +91,36 @@ data YmirValue = Atom String
     body :: [YmirValue]
   }
 
-showValue :: YmirValue -> String
-showValue (String s) = "\"" ++ s ++ "\""
-showValue (Char c) = "'" ++ [c] ++ "'"
-showValue (Atom a) = a
-showValue (Number n) = show n
-showValue (Bool True) = "true"
-showValue (Bool False) = "false"
-showValue (List li) = "(" ++ unwordsList li ++ ")"
-showValue (DottedList h t) = "(" ++ unwordsList h ++ " . " ++ showValue t ++ ")"
-showValue (Pointer ptr) = "<pointer " ++ show ptr ++ ">"
-showValue (Primitive _) = "<primitive>"
-showValue Closure {params = arguments, vararg = varargs, body = body, closure = env} =
-  "(lambda (" ++ unwords (map show args) ++
-  (case varargs of
-    Nothing -> ""
-    Just (arg, b) -> " . " ++ (if b then "'" ++ arg else arg)) ++ ") ...)"
-  where args = map (\(str, b) -> if b then "'" ++ str else str) arguments
-showValue Macro {params = arguments, vararg = varargs, body = body} =
-  "(macro (" ++ unwords (map show args) ++
-  (case varargs of
-    Nothing -> ""
-    Just (arg, b) -> " . " ++ (if b then "'" ++ arg else arg)) ++ ") ...)"
-  where args = map (\(str, b) -> if b then "'" ++ str else str) arguments
+instance Show YmirValue where
+  show (String s) = "\"" ++ s ++ "\""
+  show (Char c) = "'" ++ [c] ++ "'"
+  show (Atom a) = a
+  show (Number n) = show n
+  show (Bool True) = "true"
+  show (Bool False) = "false"
+  show (List li) = "(" ++ unwordsList li ++ ")"
+  show (DottedList h t) = "(" ++ unwordsList h ++ " . " ++ show t ++ ")"
+  show (Pointer ptr) = "<pointer " ++ show ptr ++ ">"
+  show (Primitive _) = "<primitive>"
+  show Closure {params = arguments, vararg = varargs, body = body, closure = env} =
+    let argsString = stringFromArguments arguments
+        varargsString = stringFromVarargs varargs in
+    "(lambda (" ++ argsString ++ varargsString ++ ") ...)"
+  show Macro {params = arguments, vararg = varargs, body = body} =
+    let argsString = stringFromArguments arguments
+        varargsString = stringFromVarargs varargs in
+    "(macro (" ++ argsString ++ varargsString ++ ") ...)"
+
+stringFromArguments :: [(String, Bool)] -> String
+stringFromArguments = unwords . map show . args
+  where args = map (\(str, b) -> if b then "'" ++ str else str)
+
+stringFromVarargs :: Maybe (String, Bool) -> String
+stringFromVarargs Nothing = ""
+stringFromVarargs (Just (arg, b)) = " . " ++ (if b then "'" ++ arg else arg)
 
 unwordsList :: [YmirValue] -> String
-unwordsList = unwords . map showValue
-
-instance Show YmirValue where show = showValue
+unwordsList = unwords . map show
 
 data YmirType = IntegerType
   | FloatType
