@@ -1,2 +1,4 @@
 bin/
 .nvimrc
+include/*.hs
+include/extern_stub.h
