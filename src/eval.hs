@@ -33,8 +33,8 @@ eval env (List [Atom "require", String file]) = requireFile env False (libdir fi
   where
     libdir dir =
       case (takeDirectory dir) of
-        "." -> "/home/chem/prgm/ymir/lib"
-        d -> "/home/chem/prgm/ymir/lib/" ++ d
+        "." -> "/home/lalla/prgm/ymir-lang/lib"
+        d -> "/home/lalla/prgm/ymir-lang/lib/" ++ d
     file' = takeFileName file
 eval env (List [Atom "require-relative", String file]) = requireFile env True dir file'
   where
