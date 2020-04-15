@@ -1,5 +1,6 @@
 module Value where
 import Foreign.Ptr
+import Data.Ratio (numerator, denominator)
 import Data.IORef
 import Control.Monad.Except
 import Text.ParserCombinators.Parsec (ParseError)
@@ -15,24 +16,28 @@ instance Show Number where
   show (Float f) = show f
 
 instance Fractional Number where
-  (/) (Integer a) (Integer b) = (Integer $ a `div` b)
-  (/) (Integer a) (Float b) = (Float $ fromIntegral a / b)
-  (/) (Float a) (Integer b) = (Float $ a / fromIntegral b)
-  (/) (Float a) (Float b) = (Float $ a / b)
+  (/) (Integer a) (Integer b) = Integer $ a `div` b
+  (/) (Integer a) (Float b) = Float $ fromIntegral a / b
+  (/) (Float a) (Integer b) = Float $ a / fromIntegral b
+  (/) (Float a) (Float b) = Float $ a / b
+
+  fromRational r
+    | denominator r == 1 = Integer $ fromIntegral $ numerator r
+    | otherwise = Float $ fromRational r
 
 instance Num Number where
-  (+) (Integer a) (Integer b) = (Integer $ a + b)
-  (+) (Float a) (Integer b) = (Float $ a + fromIntegral b)
-  (+) (Integer a) (Float b) = (Float $ fromIntegral  a + b)
-  (+) (Float a) (Float b) = (Float $ a + b)
+  (+) (Integer a) (Integer b) = Integer $ a + b
+  (+) (Float a) (Integer b) = Float $ a + fromIntegral b
+  (+) (Integer a) (Float b) = Float $ fromIntegral  a + b
+  (+) (Float a) (Float b) = Float $ a + b
 
-  (*) (Integer a) (Integer b) = (Integer $ a * b)
-  (*) (Float a) (Integer b) = (Float $ a * fromIntegral b)
-  (*) (Integer a) (Float b) = (Float $ fromIntegral a * b)
-  (*) (Float a) (Float b) = (Float $ a * b)
+  (*) (Integer a) (Integer b) = Integer $ a * b
+  (*) (Float a) (Integer b) = Float $ a * fromIntegral b
+  (*) (Integer a) (Float b) = Float $ fromIntegral a * b
+  (*) (Float a) (Float b) = Float $ a * b
 
-  negate (Integer i) = (Integer $ -i)
-  negate (Float f) = (Float $ -f)
+  negate (Integer i) = Integer $ -i
+  negate (Float f) = Float $ -f
 
   abs (Integer i)
     | i < 0 = Integer (-i)
@@ -75,14 +80,14 @@ data YmirValue = Atom String
   | Closure
   {
     params :: [(String, Bool)],
-    vararg :: (Maybe (String, Bool)),
+    vararg :: Maybe (String, Bool),
     body :: [YmirValue],
     closure :: Env
   }
   | Macro
   {
     params :: [(String, Bool)],
-    vararg :: (Maybe (String, Bool)),
+    vararg :: Maybe (String, Bool),
     body :: [YmirValue]
   }
 
@@ -97,13 +102,13 @@ showValue (List li) = "(" ++ unwordsList li ++ ")"
 showValue (DottedList h t) = "(" ++ unwordsList h ++ " . " ++ showValue t ++ ")"
 showValue (Pointer ptr) = "<pointer " ++ show ptr ++ ">"
 showValue (Primitive _) = "<primitive>"
-showValue (Closure {params = arguments, vararg = varargs, body = body, closure = env}) =
+showValue Closure {params = arguments, vararg = varargs, body = body, closure = env} =
   "(lambda (" ++ unwords (map show args) ++
   (case varargs of
     Nothing -> ""
     Just (arg, b) -> " . " ++ (if b then "'" ++ arg else arg)) ++ ") ...)"
   where args = map (\(str, b) -> if b then "'" ++ str else str) arguments
-showValue (Macro {params = arguments, vararg = varargs, body = body}) =
+showValue Macro {params = arguments, vararg = varargs, body = body} =
   "(macro (" ++ unwords (map show args) ++
   (case varargs of
     Nothing -> ""
@@ -142,10 +147,10 @@ instance VariableType YmirType where
   typeOf (String _) = StringType
   typeOf (Char _) = CharType
   typeOf (Primitive _) = FunctionType
-  typeOf (Closure _ _ _ _) = FunctionType
-  typeOf (Macro _ _ _) = MacroType
+  typeOf Closure {} = FunctionType
+  typeOf Macro {} = MacroType
   typeOf (Bool _) = BoolType
   typeOf (Pointer _) = PointerType
 
   is_a val NumberType = val `is_a` IntegerType || val `is_a` FloatType
-  is_a val ytype = ytype == (typeOf val)
+  is_a val ytype = ytype == typeOf val
