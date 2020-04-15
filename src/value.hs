@@ -1,11 +1,11 @@
 module Value where
-import Foreign.Ptr
-import Data.Ratio (numerator, denominator)
-import Data.IORef
 import Control.Monad.Except
+import Data.IORef
+import Data.Ratio (numerator, denominator)
+import Foreign.Ptr
 import Text.ParserCombinators.Parsec (ParseError)
 
-type Env = IORef [(String, IORef YmirValue)]
+type Env = [(String, YmirValue)]
 
 data Number = Integer Int
   | Float Double

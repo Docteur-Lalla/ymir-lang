@@ -1,13 +1,13 @@
 module Primitives where
-import Value
-import Error
-import Variable
-import Parser
 import Control.Monad.Except
-import System.IO
+import Environment
+import Error
+import Parser
 import Parser
 import System.Directory
 import System.FilePath
+import System.IO
+import Value
 
 primitives :: [(String, [YmirValue] -> ThrowsError YmirValue)]
 primitives =
@@ -41,8 +41,8 @@ primitives =
     ("eqv?", eqv)
   ]
 
-primitiveBindings :: IO Env
-primitiveBindings = nullEnv >>= flip bindVars (map makeFunc primitives)
+primitiveBindings :: Env
+primitiveBindings = map makeFunc primitives
   where
     makeFunc (var, func) = (var, Primitive func)
 

@@ -3,6 +3,9 @@ import Value
 import Control.Monad.Except
 import Text.ParserCombinators.Parsec (ParseError)
 
+runIOThrows :: IOThrowsError String -> IO String
+runIOThrows action = extractValue <$> runExceptT (trapError action)
+
 trapError action = catchError action (return . show)
 
 extractValue :: ThrowsError a -> a

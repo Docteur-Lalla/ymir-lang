@@ -10,11 +10,12 @@ module Function
   applyFunction,
   apply) where
 
-import Value
-import Error
-import Variable
 import Control.Monad.Except
+import Data.Maybe (isNothing)
+import Environment
+import Error
 import System.IO.Unsafe
+import Value
 
 type EvalFunction = Env -> YmirValue -> IOThrowsError YmirValue
 
@@ -44,41 +45,41 @@ applyProc env eval (f:args) = apply env eval f args
 applyFunction :: EvalFunction -> YmirValue -> [YmirValue] -> IOThrowsError YmirValue
 applyFunction _ (Primitive f) args = liftThrows $ f args
 applyFunction eval (Closure paramPair varargPair body env) args =
-  if num (makeParams paramPair) /= num args && varargs (varargPair) == Nothing
+  if num (makeParams paramPair) /= num args && isNothing (varargs varargPair)
     then throwError $ NumArgs (num $ makeParams paramPair) args
-    else (liftIO $ bindVars env $ zip (makeParams paramPair) args) >>=
-      bindVarArgs (remainingArgs paramPair args) (varargs varargPair) >>= evalBody eval body
+    else do
+      env2 <- liftThrows $ bindVars env $ zip (makeParams paramPair) args
+      env3 <- bindVarArgs (remainingArgs paramPair args) (varargs varargPair) env2
+      evalBody eval body env3
 
 apply :: Env -> EvalFunction -> YmirValue -> [YmirValue] -> IOThrowsError YmirValue
 apply _ eval f@(Primitive _) args = applyFunction eval f args
-apply _ eval f@(Closure _ _ _ _) args = applyFunction eval f args
+apply _ eval f@Closure {} args = applyFunction eval f args
 apply env eval (Macro paramPair varargPair body) args =
-  if num (makeParams paramPair) /= num args && varargs (varargPair) == Nothing
+  if num (makeParams paramPair) /= num args && isNothing (varargs varargPair)
     then throwError $ NumArgs (num $ makeParams paramPair) args
-    else liftM last $ mapM (eval env) res
-
+    else last <$> mapM (eval env) res
   where
-    replaceEach [] var = var
-    replaceEach (x:xs) var = replaceEach xs (replaceOccurence x var)
+    replaceEach lst var = foldl (flip replaceOccurence) var lst
 
     res = map (replaceEach arguments) body
     arguments = named ++ variables
     named = zip (makeParams paramPair) args
-    variables = case (varargs varargPair) of
+    variables = case varargs varargPair of
       Nothing -> []
       Just name -> [(name, List $ remainingArgs paramPair args)]
 
-makeParams paramPair = map fst paramPair
+makeParams = map fst
 varargs Nothing = Nothing
 varargs (Just (name, b)) = Just name
-remainingArgs paramPair args = drop (length $ makeParams paramPair) args
+remainingArgs paramPair = drop (length $ makeParams paramPair)
 
 num = toInteger . length
 
 evalBody :: EvalFunction -> [YmirValue] -> Env -> IOThrowsError YmirValue
-evalBody eval body env = liftM last $ mapM (eval env) body
+evalBody eval body env = last <$> mapM (eval env) body
 bindVarArgs remainingArgs arg env = case arg of
-  Just argName -> liftIO $ bindVars env [(argName, List remainingArgs)]
+  Just argName -> liftThrows $ bindVars env [(argName, List remainingArgs)]
   Nothing -> return env
 
 replaceOccurence :: (String, YmirValue) -> YmirValue -> YmirValue

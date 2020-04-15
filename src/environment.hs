@@ -1,9 +1,7 @@
 module Environment where
 import Control.Monad.Except
 import Data.Maybe (isJust)
-import Value hiding (Env)
-
-type Env = [(String, YmirValue)]
+import Value
 
 nullEnv :: Env
 nullEnv = []
@@ -36,3 +34,9 @@ defineVar :: Env -> String -> YmirValue -> ThrowsError Env
 defineVar env var val
   | isBound env var = setVar env var val
   | otherwise = return $ (var, val):env
+
+bindVars :: Env -> Env -> ThrowsError Env
+bindVars env [] = return env
+bindVars env ((var,val):xs) = do
+  env' <- defineVar env var val
+  bindVars env' xs

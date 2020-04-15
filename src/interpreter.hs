@@ -5,7 +5,7 @@ import Control.Monad.Except (liftIO, throwError)
 import Control.Monad.Trans.Except
 import Environment
 import Error
-import Value hiding (Env)
+import Value
 
 -- |Interpreter holding an execution environment and the result of a
 -- computation.
@@ -15,6 +15,9 @@ newtype Interp e a = Interp { runInterp :: e -> IOThrowsError (e, a) }
 -- |return the right error.
 failWith :: YmirError -> Interp e a
 failWith err = Interp $ \_ -> throwError err
+
+environment :: Interp Env Env
+environment = Interp $ \e -> return (e, e)
 
 instance Functor (Interp e) where
   fmap f i = Interp (fmap (fmap f) . runInterp i)
@@ -40,10 +43,16 @@ readVar var = Interp $ \e -> do
   val <- liftThrows $ getVar e var
   return (e, val)
 
--- |Write a variable to the interpreter's environment.
+-- |Write into an existing variable in the interpreter's environment.
 writeVar :: String -> YmirValue -> Interp Env ()
 writeVar var val = Interp $ \e -> do
   e2 <- liftThrows $ setVar e var val
+  return (e2, ())
+
+-- |Define a new variable in the interpreter's environment.
+defineNewVar :: String -> YmirValue -> Interp Env ()
+defineNewVar var val = Interp $ \e -> do
+  e2 <- liftThrows $ defineVar e var val
   return (e2, ())
 
 eval :: YmirValue -> Interp Env YmirValue
@@ -58,6 +67,6 @@ eval (DottedList x xs) = do
   return $ DottedList x' xs'
 eval (List [Atom "define", Atom var, form]) = do
   val <- eval form
-  writeVar var val
+  defineNewVar var val
   return val
 eval badForm = failWith $ BadSpecialForm "Unrecognized special form" badForm
