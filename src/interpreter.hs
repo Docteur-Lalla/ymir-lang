@@ -1,8 +1,9 @@
 module Interpreter where
 import Control.Arrow (second)
 import Control.Monad (liftM)
-import Control.Monad.Except (throwError)
+import Control.Monad.Except (liftIO, throwError)
 import Control.Monad.Trans.Except
+import Environment
 import Error
 import Value hiding (Env)
 
@@ -33,18 +34,16 @@ instance Monad (Interp e) where
     (e2, a) <- runInterp mi e
     runInterp (f a) e2
 
-type Env = [(String, YmirValue)]
-
 -- |Read a variable from the interpreter's environment.
 readVar :: String -> Interp Env YmirValue
-readVar var = Interp $ \e -> case lookup var e of
-                               Nothing -> throwError $ UnboundVariable "Variable does not exist" var
-                               Just val -> return (e, val)
+readVar var = Interp $ \e -> do
+  val <- liftThrows $ getVar e var
+  return (e, val)
 
 -- |Write a variable to the interpreter's environment.
 writeVar :: String -> YmirValue -> Interp Env ()
-writeVar var val = Interp $ \e ->
-  let e2 = fmap (\old@(name, _) -> if var == name then (var, val) else old) e in
+writeVar var val = Interp $ \e -> do
+  e2 <- liftThrows $ setVar e var val
   return (e2, ())
 
 eval :: YmirValue -> Interp Env YmirValue
