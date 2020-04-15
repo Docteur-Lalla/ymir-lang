@@ -4,6 +4,7 @@ import Control.Monad.Except
 import Control.Monad.Trans.Class
 import Environment
 import Error
+import Eval
 import Interpreter
 import Parser
 import Primitives
