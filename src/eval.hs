@@ -1,16 +1,17 @@
 module Eval where
-import Value
-import Error
 import Control.Monad.Except
-import Primitives
-import Variable
+import Data.IORef
+import Data.Maybe (isNothing)
+import Error
+import FFI
 import Function
-import System.Environment
+import Primitives
 import System.Directory
+import System.Environment
 import System.FilePath
 import System.IO.Unsafe
-import FFI
-import Data.IORef
+import Value
+import Variable
 
 eval :: Env -> YmirValue -> IOThrowsError YmirValue
 eval env val@(String _) = return val
@@ -28,11 +29,11 @@ eval env (List [Atom "if", pred, true, false]) =
     result <- eval env pred
     case result of
       Bool False -> eval env false
-      otherwise -> eval env true
+      _ -> eval env true
 eval env (List [Atom "require", String file]) = requireFile env False (libdir file) file'
   where
     libdir dir =
-      case (takeDirectory dir) of
+      case takeDirectory dir of
         "." -> "/home/lalla/prgm/ymir-lang/lib"
         d -> "/home/lalla/prgm/ymir-lang/lib/" ++ d
     file' = takeFileName file
@@ -70,9 +71,10 @@ eval env (List (f:args)) =
     case func of
       Closure params varargs body ctx ->
         do
-          argVals <- mapM (computeArg env) (zipped params args)
-          varArgVals <- mapM (computeArg env) $ zippedVarArgs params args varargs
-          if num args /= num params && varargs == Nothing
+          let computeArgM = mapM (computeArg env)
+          argVals <- computeArgM (zipped params args)
+          varArgVals <- computeArgM $ zippedVarArgs params args varargs
+          if num args /= num params && isNothing varargs
             then
               do
                 dropped <- mapM (eval env) (drop (length params) args)
@@ -87,7 +89,7 @@ eval env (List (f:args)) =
         do
           argVals <- mapM (computeArg env) (zipped params args)
           varArgVals <- mapM (computeArg env) $ zippedVarArgs params args varargs
-          if num args /= num params && varargs == Nothing
+          if num args /= num params && isNothing varargs
             then
               do
                 dropped <- mapM (eval env) (drop (length params) args)
@@ -116,12 +118,12 @@ requireFile env relative dir file =
       then setCurrentDir env (String $ normalise (dirstr dir' ++ "/" ++ dir))
       else setCurrentDir env (String $ normalise dir)
     cdir <- getCurrentDir env
-    res <- ((require (dirstr cdir) file) >>= ($!) (liftM last . mapM (eval env)))
+    res <- require (dirstr cdir) file >>= ($!) (fmap last . mapM (eval env))
     setCurrentFile env file'
     setCurrentDir env dir'
     return res
   where
-    dirstr (String s) = s        
+    dirstr (String s) = s
 
 generateBindings :: [(String, [String])] -> [(String, YmirValue)] -> [(String, YmirValue)]
 generateBindings assoc [] = []
@@ -144,7 +146,7 @@ loadModule env relative mod syms =
     primitives <- if relative
       then liftIO $ loadCModule ("./" ++ mod) symbols
       else liftIO $ loadCModule (dir ++ mod) symbols
-    let pairs = zipWith (\a -> \b -> (a, Primitive b)) symbols primitives
+    let pairs = zipWith (\a b -> (a, Primitive b)) symbols primitives
     let bindings = generateBindings (generateNames syms) pairs
     liftIO $
       do
@@ -168,7 +170,7 @@ getCurrentDir :: Env -> IOThrowsError YmirValue
 getCurrentDir env = getVar env "@@dir"
 
 setCurrentFile :: Env -> YmirValue -> IOThrowsError YmirValue
-setCurrentFile env s = setVar env "@@file" s
+setCurrentFile env = setVar env "@@file"
 
 setCurrentDir :: Env -> YmirValue -> IOThrowsError YmirValue
-setCurrentDir env s = setVar env "@@dir" s
+setCurrentDir env = setVar env "@@dir"
