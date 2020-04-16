@@ -1,4 +1,6 @@
 module Eval where
+import Control.Monad.Except
+import Data.Maybe (isNothing)
 import Environment
 import Function
 import Interpreter
@@ -48,4 +50,42 @@ eval (List (Atom "lambda":DottedList params varargs:body)) = do
 eval (List (Atom "lambda":varargs@(Atom _):body)) = do
   env <- environment
   return $ makeVarargs varargs env [] body
+eval (List (f:args)) = do
+  env <- environment
+  func <- eval f
+  case func of
+    Closure params varargs body ctx -> do
+      let computeArgM = mapM computeArg
+      argVals <- computeArgM (zipped params args)
+      varArgVals <- computeArgM $ zippedVarArgs params args varargs
+      if num args /= num params && isNothing varargs
+        then do
+          dropped <- mapM eval (drop (length params) args)
+          failWith $ NumArgs (num params) (argVals ++ dropped)
+        else apply env eval func (argVals ++ varArgVals)
+
+    Primitive _ -> do
+      argVals <- mapM eval args
+      apply env eval func argVals
+    Macro params varargs body -> do
+      argVals <- mapM computeArg (zipped params args)
+      varArgVals <- mapM computeArg $ zippedVarArgs params args varargs
+      if num args /= num params && isNothing varargs
+        then do
+          dropped <- mapM eval (drop (length params) args)
+          failWith $ NumArgs (num params) (argVals ++ dropped)
+        else apply env eval func (argVals ++ varArgVals)
+    _ -> failWith (NotFunction "Given value is not a function" $ show f)
+  where
+    num = toInteger . length
+    computeArg ((_, True), value) = eval (List [Atom "quote", value])
+    computeArg ((_, False), value) = eval value
+
+    zipped params args = zip params (take (length params) args)
+    varArgs _ _ Nothing = []
+    varArgs params args (Just _) = drop (length params) args
+    zippedVarArgs _ _ Nothing = []
+    zippedVarArgs params args (varargs@(Just (name, b))) =
+      map (\var -> ((name, b), var)) (varArgs params args varargs)
+
 eval badForm = failWith $ BadSpecialForm "Unrecognized special form" badForm
