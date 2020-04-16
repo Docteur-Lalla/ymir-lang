@@ -13,10 +13,9 @@ import Control.Monad.Except
 import Data.Maybe (isNothing)
 import Environment
 import Error
+import Interpreter
 import System.IO.Unsafe
 import Value
-
-type EvalFunction = Env -> YmirValue -> IOThrowsError YmirValue
 
 -- |Make a function argument from the given value.
 -- |If the value is quoted, then the argument shall not be evaluated before
@@ -43,40 +42,43 @@ makeMacro varargs env params = Macro pnames varargs
 makeNormalMacro = makeMacro Nothing
 makeVarargsMacro varargs env = makeMacro (Just $ makeArgument env varargs) env
 
+type EvalFunction = YmirValue -> Interp Env YmirValue
+
 -- |Apply the given function to the argument list. This function is the
 -- |equivalent of the splat operator of other languages.
-applyProc :: Env -> EvalFunction -> [YmirValue] -> IOThrowsError YmirValue
+applyProc :: Env -> EvalFunction -> [YmirValue] -> Interp Env YmirValue
 applyProc env eval [f, List args] = apply env eval f args
 applyProc env eval (f:args) = apply env eval f args
 
 -- |Apply the given function to the given arguments.
-applyFunction :: EvalFunction -> YmirValue -> [YmirValue] -> IOThrowsError YmirValue
-applyFunction _ (Primitive f) args = liftThrows $ f args
+applyFunction :: EvalFunction -> YmirValue -> [YmirValue] -> Interp Env YmirValue
+applyFunction _ (Primitive f) args = Interp $ \e -> liftThrows $ fmap ((,) e) (f args)
 applyFunction eval (Closure paramPairs varargPair body env) args =
-    withRightParameterCount paramPairs args varargPair $ do
-      env2 <- liftThrows $ bindVars env $ zip (makeParams paramPairs) args
-      env3 <- bindVarArgs (remainingArgs paramPairs args) (varargs varargPair) env2
-      evalBody eval body env3
+  withRightParameterCount paramPairs args varargPair $ do
+    let env2 = bindVars env $ zip (makeParams paramPairs) args
+    env3 <- Interp $ \_ -> do
+      e <- liftThrows env2 >>= bindVarArgs (remainingArgs paramPairs args) (varargs varargPair)
+      return (e, e)
+    evalBody eval body env3
 
 -- |Apply the function, primitive or macro to the given arguments.
-apply :: Env -> EvalFunction -> YmirValue -> [YmirValue] -> IOThrowsError YmirValue
+apply :: Env -> EvalFunction -> YmirValue -> [YmirValue] -> Interp Env YmirValue
 apply _ eval f@(Primitive _) args = applyFunction eval f args
 apply _ eval f@Closure {} args = applyFunction eval f args
 apply env eval (Macro paramPairs varargPair body) args =
-    withRightParameterCount paramPairs args varargPair (last <$> mapM (eval env) res)
+  withRightParameterCount paramPairs args varargPair (evalBody eval res env)
   where
     replaceEach lst var = foldl (flip replaceOccurence) var lst
-    res = map (replaceEach arguments) body
-    arguments = named ++ variables
+    res = map (replaceEach $ named ++ variables) body
     named = zip (makeParams paramPairs) args
     variables = case varargs varargPair of
       Nothing -> []
       Just name -> [(name, List $ remainingArgs paramPairs args)]
 
-withRightParameterCount :: [Parameter] -> [YmirValue] -> Maybe Parameter -> IOThrowsError a -> IOThrowsError a
+withRightParameterCount :: [Parameter] -> [YmirValue] -> Maybe Parameter -> Interp Env a -> Interp Env a
 withRightParameterCount paramPairs args varargPair f =
   if num (makeParams paramPairs) /= num args && isNothing (varargs varargPair)
-    then throwError $ NumArgs (num $ makeParams paramPairs) args
+    then failWith $ NumArgs (num $ makeParams paramPairs) args
     else f
 
 makeParams = map fst
@@ -86,8 +88,12 @@ remainingArgs paramPair = drop (length $ makeParams paramPair)
 
 num = toInteger . length
 
-evalBody :: EvalFunction -> [YmirValue] -> Env -> IOThrowsError YmirValue
-evalBody eval body env = last <$> mapM (eval env) body
+evalBody :: EvalFunction -> [YmirValue] -> Env -> Interp Env YmirValue
+evalBody eval body env = Interp $ \e -> do
+  pairs <- mapM (flip runInterp env . eval) body
+  let vals = fmap snd pairs
+  return (e, last vals)
+
 bindVarArgs remainingArgs arg env = case arg of
   Just argName -> liftThrows $ bindVars env [(argName, List remainingArgs)]
   Nothing -> return env

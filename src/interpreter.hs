@@ -5,7 +5,6 @@ import Control.Monad.Except (liftIO, throwError)
 import Control.Monad.Trans.Except
 import Environment
 import Error
-import Function
 import Value
 
 -- |Interpreter holding an execution environment and the result of a
