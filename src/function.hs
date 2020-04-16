@@ -10,7 +10,7 @@ module Function
   apply) where
 
 import Control.Monad.Except
-import Data.Maybe (isNothing)
+import Data.Maybe (isNothing, maybeToList)
 import Environment
 import Error
 import Interpreter
@@ -68,12 +68,13 @@ apply _ eval f@Closure {} args = applyFunction eval f args
 apply env eval (Macro paramPairs varargPair body) args =
   withRightParameterCount paramPairs args varargPair (evalBody eval res env)
   where
-    replaceEach lst var = foldl (flip replaceOccurence) var lst
     res = map (replaceEach $ named ++ variables) body
+    replaceEach lst var = foldl (flip replaceOccurence) var lst
+    -- Bind the parameter to the function argument names.
     named = zip (makeParams paramPairs) args
-    variables = case varargs varargPair of
-      Nothing -> []
-      Just name -> [(name, List $ remainingArgs paramPairs args)]
+    -- Bind the variadic parameter if any.
+    variables = fmap makeVarargParam $ maybeToList $ varargs varargPair
+    makeVarargParam name = (name, List $ remainingArgs paramPairs args)
 
 withRightParameterCount :: [Parameter] -> [YmirValue] -> Maybe Parameter -> Interp Env a -> Interp Env a
 withRightParameterCount paramPairs args varargPair f =
