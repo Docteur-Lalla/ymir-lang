@@ -6,7 +6,6 @@ module Function
   makeMacro,
   makeNormalMacro,
   makeVarargsMacro,
-  applyProc,
   applyFunction,
   apply) where
 
@@ -19,55 +18,66 @@ import Value
 
 type EvalFunction = Env -> YmirValue -> IOThrowsError YmirValue
 
-makeArgument :: Env -> YmirValue -> (String, Bool)
+-- |Make a function argument from the given value.
+-- |If the value is quoted, then the argument shall not be evaluated before
+-- |being sent to the function.
+makeArgument :: Env -> YmirValue -> Parameter
 makeArgument env (Atom name) = (name, False)
 makeArgument env (List [Atom "quote", Atom name]) = (name, True)
 makeArgument env value = ("", False)
 
-makeFunc :: Maybe (String, Bool) -> Env -> [YmirValue] -> [YmirValue] -> YmirValue
+-- |Create a function from the given variadic parameter name, environment,
+-- |symbol list and body.
+makeFunc :: Maybe Parameter -> Env -> [YmirValue] -> [YmirValue] -> YmirValue
 makeFunc varargs env params body = Closure pnames varargs body env
   where pnames = map (makeArgument env) params
 
 makeNormalFunc = makeFunc Nothing
 makeVarargs varargs env = makeFunc (Just $ makeArgument env varargs) env
 
-makeMacro :: Maybe (String, Bool) -> Env -> [YmirValue] -> [YmirValue] -> YmirValue
+-- |Make a macro from the same informations as @makeFunc.
+makeMacro :: Maybe Parameter -> Env -> [YmirValue] -> [YmirValue] -> YmirValue
 makeMacro varargs env params = Macro pnames varargs
   where pnames = map (makeArgument env) params
 
 makeNormalMacro = makeMacro Nothing
 makeVarargsMacro varargs env = makeMacro (Just $ makeArgument env varargs) env
 
+-- |Apply the given function to the argument list. This function is the
+-- |equivalent of the splat operator of other languages.
 applyProc :: Env -> EvalFunction -> [YmirValue] -> IOThrowsError YmirValue
 applyProc env eval [f, List args] = apply env eval f args
 applyProc env eval (f:args) = apply env eval f args
 
+-- |Apply the given function to the given arguments.
 applyFunction :: EvalFunction -> YmirValue -> [YmirValue] -> IOThrowsError YmirValue
 applyFunction _ (Primitive f) args = liftThrows $ f args
-applyFunction eval (Closure paramPair varargPair body env) args =
-  if num (makeParams paramPair) /= num args && isNothing (varargs varargPair)
-    then throwError $ NumArgs (num $ makeParams paramPair) args
-    else do
-      env2 <- liftThrows $ bindVars env $ zip (makeParams paramPair) args
-      env3 <- bindVarArgs (remainingArgs paramPair args) (varargs varargPair) env2
+applyFunction eval (Closure paramPairs varargPair body env) args =
+    withRightParameterCount paramPairs args varargPair $ do
+      env2 <- liftThrows $ bindVars env $ zip (makeParams paramPairs) args
+      env3 <- bindVarArgs (remainingArgs paramPairs args) (varargs varargPair) env2
       evalBody eval body env3
 
+-- |Apply the function, primitive or macro to the given arguments.
 apply :: Env -> EvalFunction -> YmirValue -> [YmirValue] -> IOThrowsError YmirValue
 apply _ eval f@(Primitive _) args = applyFunction eval f args
 apply _ eval f@Closure {} args = applyFunction eval f args
-apply env eval (Macro paramPair varargPair body) args =
-  if num (makeParams paramPair) /= num args && isNothing (varargs varargPair)
-    then throwError $ NumArgs (num $ makeParams paramPair) args
-    else last <$> mapM (eval env) res
+apply env eval (Macro paramPairs varargPair body) args =
+    withRightParameterCount paramPairs args varargPair (last <$> mapM (eval env) res)
   where
     replaceEach lst var = foldl (flip replaceOccurence) var lst
-
     res = map (replaceEach arguments) body
     arguments = named ++ variables
-    named = zip (makeParams paramPair) args
+    named = zip (makeParams paramPairs) args
     variables = case varargs varargPair of
       Nothing -> []
-      Just name -> [(name, List $ remainingArgs paramPair args)]
+      Just name -> [(name, List $ remainingArgs paramPairs args)]
+
+withRightParameterCount :: [Parameter] -> [YmirValue] -> Maybe Parameter -> IOThrowsError a -> IOThrowsError a
+withRightParameterCount paramPairs args varargPair f =
+  if num (makeParams paramPairs) /= num args && isNothing (varargs varargPair)
+    then throwError $ NumArgs (num $ makeParams paramPairs) args
+    else f
 
 makeParams = map fst
 varargs Nothing = Nothing

@@ -65,6 +65,7 @@ data YmirError = NumArgs Integer [YmirValue]
   | UnboundVariable String String
   | Default String
 
+type Parameter = (String, Bool)
 type ThrowsError = Either YmirError
 type IOThrowsError = ExceptT YmirError IO
 
@@ -79,15 +80,15 @@ data YmirValue = Atom String
   | Primitive ([YmirValue] -> ThrowsError YmirValue)
   | Closure
   {
-    params :: [(String, Bool)],
-    vararg :: Maybe (String, Bool),
+    params :: [Parameter],
+    vararg :: Maybe Parameter,
     body :: [YmirValue],
     closure :: Env
   }
   | Macro
   {
-    params :: [(String, Bool)],
-    vararg :: Maybe (String, Bool),
+    params :: [Parameter],
+    vararg :: Maybe Parameter,
     body :: [YmirValue]
   }
 
@@ -111,11 +112,11 @@ instance Show YmirValue where
         varargsString = stringFromVarargs varargs in
     "(macro (" ++ argsString ++ varargsString ++ ") ...)"
 
-stringFromArguments :: [(String, Bool)] -> String
+stringFromArguments :: [Parameter] -> String
 stringFromArguments = unwords . map show . args
   where args = map (\(str, b) -> if b then "'" ++ str else str)
 
-stringFromVarargs :: Maybe (String, Bool) -> String
+stringFromVarargs :: Maybe Parameter -> String
 stringFromVarargs Nothing = ""
 stringFromVarargs (Just (arg, b)) = " . " ++ (if b then "'" ++ arg else arg)
 
