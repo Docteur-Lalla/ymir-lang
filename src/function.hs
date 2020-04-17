@@ -55,7 +55,7 @@ applyFunction :: EvalFunction -> YmirValue -> [YmirValue] -> Interp Env YmirValu
 applyFunction _ (Primitive f) args = Interp $ \e -> liftThrows $ fmap ((,) e) (f args)
 applyFunction eval (Closure paramPairs varargPair body env) args =
   withRightParameterCount paramPairs args varargPair $ do
-    let env2 = bindVars env $ zip (makeParams paramPairs) args
+    let env2 = bindVars env $ bindParameters paramPairs args
     env3 <- Interp $ \_ -> do
       e <- liftThrows env2 >>= bindVarArgs (remainingArgs paramPairs args) (varargs varargPair)
       return (e, e)
@@ -71,7 +71,7 @@ apply env eval (Macro paramPairs varargPair body) args =
     res = map (replaceEach $ named ++ variables) body
     replaceEach lst var = foldl (flip replaceOccurence) var lst
     -- Bind the parameter to the function argument names.
-    named = zip (makeParams paramPairs) args
+    named = bindParameters paramPairs args
     -- Bind the variadic parameter if any.
     variables = fmap makeVarargParam $ maybeToList $ varargs varargPair
     makeVarargParam name = (name, List $ remainingArgs paramPairs args)
@@ -89,7 +89,10 @@ withRightParameterCount paramPairs args varargPair f
 differentLengths :: [a] -> [b] -> Bool
 differentLengths list1 list2 = length list1 /= length list2
 
-makeParams = map fst
+-- |Bind the parameter name with the provided value.
+bindParameters :: [(String, Bool)] -> [YmirValue] -> [(String, YmirValue)]
+bindParameters paramPairs = zip (map fst paramPairs)
+
 remainingArgs paramPair = drop (length paramPair)
 
 varargs Nothing = Nothing
