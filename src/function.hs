@@ -57,14 +57,18 @@ applyFunction eval (Closure paramPairs varargPair body env) args =
   withRightParameterCount paramPairs args varargPair $ do
     let env2 = bindVars env $ bindParameters paramPairs args
     env3 <- Interp $ \_ -> do
-      e <- liftThrows env2 >>= bindVarArgs (remainingArgs paramPairs args) (varargs varargPair)
+      e <- liftThrows env2 >>= bindVarArgs (remainingArguments paramPairs args) (varargName varargPair)
       return (e, e)
     evalBody eval body env3
 
 -- |Apply the function, primitive or macro to the given arguments.
 apply :: Env -> EvalFunction -> YmirValue -> [YmirValue] -> Interp Env YmirValue
 apply _ eval f@(Primitive _) args = applyFunction eval f args
-apply _ eval f@Closure {} args = applyFunction eval f args
+apply _ eval f@Closure {} args = do
+  env <- environment
+  val <- applyFunction eval f args
+  setEnvironment env
+  return val
 apply env eval (Macro paramPairs varargPair body) args =
   withRightParameterCount paramPairs args varargPair (evalBody eval res env)
   where
@@ -73,8 +77,8 @@ apply env eval (Macro paramPairs varargPair body) args =
     -- Bind the parameter to the function argument names.
     named = bindParameters paramPairs args
     -- Bind the variadic parameter if any.
-    variables = fmap makeVarargParam $ maybeToList $ varargs varargPair
-    makeVarargParam name = (name, List $ remainingArgs paramPairs args)
+    variables = fmap makeVarargParam $ maybeToList $ varargName varargPair
+    makeVarargParam name = (name, List $ remainingArguments paramPairs args)
 
 -- |Return the given interpreter iff the the number of arguments sent to the
 -- |function matches the number of expected parameter or if there are enough
@@ -93,11 +97,14 @@ differentLengths list1 list2 = length list1 /= length list2
 bindParameters :: [(String, Bool)] -> [YmirValue] -> [(String, YmirValue)]
 bindParameters paramPairs = zip (map fst paramPairs)
 
-remainingArgs paramPair = drop (length paramPair)
+-- |Extract the name of a variadic parameter if any.
+varargName :: Maybe Parameter -> Maybe String
+varargName = fmap fst
 
-varargs Nothing = Nothing
-varargs (Just (name, b)) = Just name
-
+-- |Get the list of arguments sent to a function that have not been bound to a
+-- |positional parameter.
+remainingArguments :: [Parameter] -> [a] -> [a]
+remainingArguments paramPairs = drop (length paramPairs)
 
 evalBody :: EvalFunction -> [YmirValue] -> Env -> Interp Env YmirValue
 evalBody eval body env = Interp $ \e -> do

@@ -19,6 +19,9 @@ failWith err = Interp $ \_ -> throwError err
 environment :: Interp Env Env
 environment = Interp $ \e -> return (e, e)
 
+setEnvironment :: Env -> Interp Env ()
+setEnvironment env = Interp $ \_ -> return (env, ())
+
 instance Functor (Interp e) where
   fmap f i = Interp (fmap (fmap f) . runInterp i)
 
