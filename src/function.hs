@@ -76,18 +76,25 @@ apply env eval (Macro paramPairs varargPair body) args =
     variables = fmap makeVarargParam $ maybeToList $ varargs varargPair
     makeVarargParam name = (name, List $ remainingArgs paramPairs args)
 
+-- |Return the given interpreter iff the the number of arguments sent to the
+-- |function matches the number of expected parameter or if there are enough
+-- |arguments sent to a variadic function.
 withRightParameterCount :: [Parameter] -> [YmirValue] -> Maybe Parameter -> Interp Env a -> Interp Env a
-withRightParameterCount paramPairs args varargPair f =
-  if num (makeParams paramPairs) /= num args && isNothing (varargs varargPair)
-    then failWith $ NumArgs (num $ makeParams paramPairs) args
-    else f
+withRightParameterCount paramPairs args varargPair f
+  | differentLengths paramPairs args && isNothing varargPair = failWith $ NumArgs (num paramPairs) args
+  | otherwise = f
+  where num = toInteger . length
+
+-- |Test if the length of both lists is different.
+differentLengths :: [a] -> [b] -> Bool
+differentLengths list1 list2 = length list1 /= length list2
 
 makeParams = map fst
+remainingArgs paramPair = drop (length paramPair)
+
 varargs Nothing = Nothing
 varargs (Just (name, b)) = Just name
-remainingArgs paramPair = drop (length $ makeParams paramPair)
 
-num = toInteger . length
 
 evalBody :: EvalFunction -> [YmirValue] -> Env -> Interp Env YmirValue
 evalBody eval body env = Interp $ \e -> do
