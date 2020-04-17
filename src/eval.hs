@@ -1,6 +1,6 @@
 module Eval where
 import Control.Monad.Except
-import Data.Maybe (isNothing)
+import Data.Maybe (isNothing, maybeToList)
 import Environment
 import Function
 import Interpreter
@@ -53,39 +53,49 @@ eval (List (Atom "lambda":varargs@(Atom _):body)) = do
 eval (List (f:args)) = do
   env <- environment
   func <- eval f
+  let applyFunction = apply env eval func
   case func of
-    Closure params varargs body ctx -> do
-      let computeArgM = mapM computeArg
-      argVals <- computeArgM (zipped params args)
-      varArgVals <- computeArgM $ zippedVarArgs params args varargs
-      if num args /= num params && isNothing varargs
-        then do
-          dropped <- mapM eval (drop (length params) args)
-          failWith $ NumArgs (num params) (argVals ++ dropped)
-        else apply env eval func (argVals ++ varArgVals)
+    Macro params varargs body -> prepareEval params varargs body args applyFunction
+    Closure params varargs body _ -> prepareEval params varargs body args applyFunction
 
     Primitive _ -> do
       argVals <- mapM eval args
       apply env eval func argVals
-    Macro params varargs body -> do
-      argVals <- mapM computeArg (zipped params args)
-      varArgVals <- mapM computeArg $ zippedVarArgs params args varargs
-      if num args /= num params && isNothing varargs
-        then do
-          dropped <- mapM eval (drop (length params) args)
-          failWith $ NumArgs (num params) (argVals ++ dropped)
-        else apply env eval func (argVals ++ varArgVals)
     _ -> failWith (NotFunction "Given value is not a function" $ show f)
-  where
-    num = toInteger . length
-    computeArg ((_, True), value) = eval (List [Atom "quote", value])
-    computeArg ((_, False), value) = eval value
-
-    zipped params args = zip params (take (length params) args)
-    varArgs _ _ Nothing = []
-    varArgs params args (Just _) = drop (length params) args
-    zippedVarArgs _ _ Nothing = []
-    zippedVarArgs params args (varargs@(Just (name, b))) =
-      map (\var -> ((name, b), var)) (varArgs params args varargs)
 
 eval badForm = failWith $ BadSpecialForm "Unrecognized special form" badForm
+
+-- |Evaluation the arguments that should not be quoted before actually calling
+-- |the function.
+prepareEval :: [Parameter]
+            -> Maybe Parameter
+            -> [YmirValue]
+            -> [YmirValue]
+            -> ([YmirValue] -> Interp Env YmirValue)
+            -> Interp Env YmirValue
+prepareEval params varargs body args f = do
+  let computeArgM = mapM computeArg
+  argVals <- computeArgM (zipped params args)
+  varArgVals <- computeArgM (bindVarArgs params args varargs)
+  if differentLengths args params && isNothing varargs
+    then do
+      dropped <- mapM eval (remainingArguments params args)
+      failWith $ NumArgs (num params) (argVals ++ dropped)
+    else f (argVals ++ varArgVals)
+  where
+    num = toInteger . length
+    zipped params args = zip params (take (length params) args)
+
+-- |Evaluate the argument if it should be evaluated.
+computeArg :: (Parameter, YmirValue) -> Interp Env YmirValue
+computeArg ((_, True), value) = eval (List [Atom "quote", value])
+computeArg ((_, False), value) = eval value
+
+varArgs :: [Parameter] -> [YmirValue] -> Maybe (String, Bool) -> [YmirValue]
+varArgs params args = concat . maybeToList . fmap (const $ remainingArguments params args)
+
+-- |Bind the variadic arguments to the variadic parameter name.
+bindVarArgs :: [Parameter] -> [YmirValue] -> Maybe Parameter -> [(Parameter, YmirValue)]
+bindVarArgs params args =
+  let bind var = map ((,) var) (remainingArguments params args) in
+  concat . maybeToList . fmap bind

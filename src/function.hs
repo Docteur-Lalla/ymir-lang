@@ -7,7 +7,9 @@ module Function
   makeNormalMacro,
   makeVarargsMacro,
   applyFunction,
-  apply) where
+  apply,
+  differentLengths,
+  remainingArguments) where
 
 import Control.Monad.Except
 import Data.Maybe (isNothing, maybeToList)
