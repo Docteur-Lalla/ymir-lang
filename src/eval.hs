@@ -56,6 +56,11 @@ eval (List [Atom "require-relative", String file]) = requireFile True dir file'
   where
     dir = takeDirectory file
     file' = takeFileName file
+eval (List [Atom "if", pred, true, false]) = do
+  cond <- eval pred
+  case cond of
+    Bool False -> eval false
+    _ -> eval true
 eval (List (f:args)) = do
   env <- environment
   func <- eval f
