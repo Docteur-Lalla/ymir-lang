@@ -4,6 +4,8 @@ import Data.Maybe (isNothing, maybeToList)
 import Environment
 import Function
 import Interpreter
+import Primitives
+import System.FilePath
 import Value
 
 eval :: YmirValue -> Interp Env YmirValue
@@ -50,6 +52,10 @@ eval (List (Atom "lambda":DottedList params varargs:body)) = do
 eval (List (Atom "lambda":varargs@(Atom _):body)) = do
   env <- environment
   return $ makeVarargs varargs env [] body
+eval (List [Atom "require-relative", String file]) = requireFile True dir file'
+  where
+    dir = takeDirectory file
+    file' = takeFileName file
 eval (List (f:args)) = do
   env <- environment
   func <- eval f
@@ -99,3 +105,40 @@ bindVarArgs :: [Parameter] -> [YmirValue] -> Maybe Parameter -> [(Parameter, Ymi
 bindVarArgs params args =
   let bind var = map ((,) var) (remainingArguments params args) in
   concat . maybeToList . fmap bind
+
+-- |Load an Ymir source file and execute its contents.
+requireFile :: Bool -> String -> String -> Interp Env YmirValue
+requireFile relative dir file = do
+  file' <- getCurrentFile
+  dir' <- getCurrentDir
+  setCurrentFile (String file)
+  setRelativeCurrentDir relative dir'
+  cdir <- getCurrentDir
+  res <- (Interp $ \e -> (,) e <$> fileStatements cdir) >>= ($!) (fmap last . mapM eval)
+  setCurrentFile file'
+  setCurrentDir dir'
+  return res
+  where
+    dirstr (String s) = s
+    fileStatements cdir = require (dirstr cdir) file
+
+    -- If the command is require-relative, the current directory variable is
+    -- computed from the current directory, otherwise the given directory is
+    -- used as an absolute path.
+    setRelativeCurrentDir :: Bool -> YmirValue -> Interp Env ()
+    setRelativeCurrentDir relative dir'
+      | relative = setNormalisedCurrentDir $ dirstr dir' ++ "/" ++ dir
+      | otherwise = setNormalisedCurrentDir dir
+      where setNormalisedCurrentDir = setCurrentDir . String . normalise
+
+getCurrentFile :: Interp Env YmirValue
+getCurrentFile = readVar "@@file"
+
+getCurrentDir :: Interp Env YmirValue
+getCurrentDir = readVar "@@dir"
+
+setCurrentFile :: YmirValue -> Interp Env ()
+setCurrentFile = writeVar "@@file"
+
+setCurrentDir :: YmirValue -> Interp Env ()
+setCurrentDir = writeVar "@@dir"
