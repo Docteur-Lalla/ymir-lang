@@ -108,11 +108,14 @@ varargName = fmap fst
 remainingArguments :: [Parameter] -> [a] -> [a]
 remainingArguments paramPairs = drop (length paramPairs)
 
+-- |Evaluate a body of multiple statement and return the value computed by the
+-- |last one.
 evalBody :: EvalFunction -> [YmirValue] -> Env -> Interp Env YmirValue
-evalBody eval body env = Interp $ \e -> do
-  pairs <- mapM (flip runInterp env . eval) body
-  let vals = fmap snd pairs
-  return (e, last vals)
+evalBody eval (x:rest) env = Interp $ \e -> do
+  fst <- runInterp (eval x) env
+  (_, val) <- evalFold fst rest
+  return (e, val)
+    where evalFold = foldM (\(env, _) val -> flip runInterp env $! eval val)
 
 bindVarArgs remainingArgs arg env = case arg of
   Just argName -> liftThrows $ bindVars env [(argName, List remainingArgs)]
