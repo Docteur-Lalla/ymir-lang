@@ -3,8 +3,8 @@
 
 (define (not x)
   (if x
-    false
-    true))
+      false
+      true))
 
 (define (list . objs)
   objs)
@@ -49,14 +49,14 @@
     li))
 
 (define (foldl f acc li)
-   (if (null? li)
-     acc
-     (foldl f (f acc (car li)) (cdr li))))
+  (if (null? li)
+      acc
+      (foldl f (f acc (car li)) (cdr li))))
 
 (define (foldr f end li)
   (if (null? li)
-    end
-    (f (car li) (foldr f end (cdr li)))))
+      end
+      (f (car li) (foldr f end (cdr li)))))
 
 (define (reverse li)
   (foldl
@@ -82,107 +82,107 @@
 
 (define (atomic? li)
   (if (list? li)
-    (and!
-      (eqv? 'quote (car li))
-      (not (list? (car (cdr li))))
-      (symbol? (car (cdr li)))
-      (= (length li) 2))
-    (symbol? li)))
+      (and!
+        (eqv? 'quote (car li))
+        (not (list? (car (cdr li))))
+        (symbol? (car (cdr li)))
+        (= (length li) 2))
+      (symbol? li)))
 
 (defmacro (let 'pairs 'body)
-           (define ($$let-lambdas li body)
-             (if (eqv? li '())
-                 body
-                 (list 'lambda (list (car li))
-                       ($$let-lambdas (cdr li) body))))
-           (define ($$let-arguments lbds args)
-             (if (eqv? args '())
-                 lbds
-                 (list 'apply
-                       ($$let-arguments lbds (cdr args))
-                       (list 'list (car args)))))
-           (eval
-             ($$let-arguments
-               ($$let-lambdas
-                 (map fst 'pairs)
-                 (if (atomic? 'body)
-                     body
-                     'body))
-               (map snd (reverse 'pairs)))))
+          (define (let-lambdas li body)
+            (if (eqv? li '())
+                body
+                (list 'lambda (list (car li))
+                      (let-lambdas (cdr li) body))))
+          (define (let-arguments lbds args)
+            (if (eqv? args '())
+                lbds
+                (list 'apply
+                      (let-arguments lbds (cdr args))
+                      (list 'list (car args)))))
+          (eval
+            (let-arguments
+              (let-lambdas
+                (map fst 'pairs)
+                (if (atomic? 'body)
+                    body
+                    'body))
+              (map snd (reverse 'pairs)))))
 
 (defmacro (letrec 'pairs 'body)
-           (define ($$letrec-replace-recursive p f li)
-             (if (null? li)
-                 '()
-                 (if (p (car li))
-                     (if (list? (f (car li)))
-                         (concat
-                           (f (car li))
-                           ($$letrec-replace-recursive p f (cdr li)))
-                         (cons
-                           (f (car li))
-                           ($$letrec-replace-recursive p f (cdr li))))
-                     (if (list? (car li))
-                         (cons
-                           ($$letrec-replace-recursive p f (car li))
-                           ($$letrec-replace-recursive p f (cdr li)))
-                         (cons
-                           (car li)
-                           ($$letrec-replace-recursive p f (cdr li)))))))
-           (define (snd li)
-             (if (dotted-list? li)
-                 (cdr li)
-                 (car (cdr li))))
-           (define (lambda? pair)
-             (if (list? (snd pair))
-                 (eqv? (car (snd pair)) 'lambda)
-                 false))
+          (define (letrec-replace-recursive p f li)
+            (if (null? li)
+                '()
+                (if (p (car li))
+                    (if (list? (f (car li)))
+                        (concat
+                          (f (car li))
+                          (letrec-replace-recursive p f (cdr li)))
+                        (cons
+                          (f (car li))
+                          (letrec-replace-recursive p f (cdr li))))
+                    (if (list? (car li))
+                        (cons
+                          (letrec-replace-recursive p f (car li))
+                          (letrec-replace-recursive p f (cdr li)))
+                        (cons
+                          (car li)
+                          (letrec-replace-recursive p f (cdr li)))))))
+          (define (snd li)
+            (if (dotted-list? li)
+                (cdr li)
+                (car (cdr li))))
+          (define (lambda? pair)
+            (if (list? (snd pair))
+                (eqv? (car (snd pair)) 'lambda)
+                false))
 
-           (define ($$letrec-begin-with name elem)
-             (if (list? elem)
-                 (eqv? name (car elem))
-                 false))
+          (define (letrec-begin-with name elem)
+            (if (list? elem)
+                (eqv? name (car elem))
+                false))
 
-           (define (caar li) (car (car li)))
-           (define (cadr li) (car (cdr li)))
-           (define (cdar li) (cdr (car li)))
+          (define (caar li) (car (car li)))
+          (define (cadr li) (car (cdr li)))
+          (define (cdar li) (cdr (car li)))
 
-           (define ($$letrec-make-lambdas-headers li body)
-             (if (null? li)
-                 body
-                 (list
-                   'lambda
-                   (list (caar li))
-                   ($$letrec-make-lambdas-headers
-                     (cdr li)
-                     (car ($$letrec-replace-recursive
-                            (curry $$letrec-begin-with (caar li))
-                            (lambda (li) (list (cons (car li) li)))
-                            (list body)))))))
+          (define (letrec-make-lambdas-headers li body)
+            (if (null? li)
+                body
+                (list
+                  'lambda
+                  (list (caar li))
+                  (letrec-make-lambdas-headers
+                    (cdr li)
+                    (car (letrec-replace-recursive
+                           (curry letrec-begin-with (caar li))
+                           (lambda (li) (list (cons (car li) li)))
+                           (list body)))))))
 
-           (define ($$letrec-make-recursive-lambda name code)
-             (if (lambda? (name . code))
-                 (concat
-                   (list 'lambda (cons name (car (cdr code))))
-                   ($$letrec-replace-recursive
-                     (curry $$letrec-begin-with name)
-                     (lambda (li) (list (cons (car li) li)))
-                     (cdr (cdr code))))
-                 code))
+          (define (letrec-make-recursive-lambda name code)
+            (if (lambda? (name . code))
+                (concat
+                  (list 'lambda (cons name (car (cdr code))))
+                  (letrec-replace-recursive
+                    (curry letrec-begin-with name)
+                    (lambda (li) (list (cons (car li) li)))
+                    (cdr (cdr code))))
+                code))
 
-           (define ($$letrec-make-lambdas-arguments lambdas pairs)
-             (if (null? pairs)
-                 lambdas
-                 (list 'apply ($$letrec-make-lambdas-arguments lambdas (cdr pairs))
-                       (list 'list
-                             ($$letrec-make-recursive-lambda
-                               (caar pairs)
-                               (snd (car pairs)))))))
+          (define (letrec-make-lambdas-arguments lambdas pairs)
+            (if (null? pairs)
+                lambdas
+                (list 'apply (letrec-make-lambdas-arguments lambdas (cdr pairs))
+                      (list 'list
+                            (letrec-make-recursive-lambda
+                              (caar pairs)
+                              (snd (car pairs)))))))
 
-           (eval
-             ($$letrec-make-lambdas-arguments
-               ($$letrec-make-lambdas-headers 'pairs
-                                              (if (atomic? 'body)
-                                                  body
-                                                  'body))
-               (reverse 'pairs))))
+          (eval
+            (letrec-make-lambdas-arguments
+              (letrec-make-lambdas-headers 'pairs
+                                           (if (atomic? 'body)
+                                               body
+                                               'body))
+              (reverse 'pairs))))
