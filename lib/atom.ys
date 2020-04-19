@@ -186,3 +186,21 @@
                                                body
                                                'body))
               (reverse 'pairs))))
+
+(defmacro (cond . 'stmts)
+          (define (foldl f fst rest)
+            (if (eqv? '() rest)
+                fst
+                (foldl f (f fst (car rest)) (cdr rest))))
+          (define (handle-one val)
+            (if (dotted-list? val)
+                (if (eval (car val))
+                    (true . (eval (cdr val)))
+                    (false . false))
+                (true . (eval val))))
+          (define res (foldl (lambda (pair next) (if (car pair)
+                                                     pair
+                                                     (handle-one next)))
+                             (false . false)
+                             'stmts))
+          (cdr res))

@@ -8,19 +8,19 @@
 
 (define (string-contains? str char)
   (if (null? str)
-    false
-    (if (eqv? (car str) char)
-      true
-      (string-contains? (cdr str) char))))
+      false
+      (if (eqv? (car str) char)
+          true
+          (string-contains? (cdr str) char))))
 
 (define (string-prefix? str sub)
   (if (null? sub)
-    true
-    (if (< (length str) (length sub))
-      false
-      (if (eqv? (car str) (car sub))
-        (string-prefix? (cdr str) (cdr sub))
-        false))))
+      true
+      (if (< (length str) (length sub))
+          false
+          (if (eqv? (car str) (car sub))
+              (string-prefix? (cdr str) (cdr sub))
+              false))))
 
 (define (string-suffix? str sub)
   (string-prefix? (reverse str) (reverse sub)))
@@ -32,74 +32,74 @@
       (< (length str) (length sub)))
     false
     (if (string-prefix? str sub)
-      true
-      (string-sub? (cdr str) sub))))
+        true
+        (string-sub? (cdr str) sub))))
 
 (define (string-find str sub)
   (if (string-sub? str sub)
-    (if (string-prefix? str sub)
-      0
-      (+ 1 (string-find (cdr str) sub)))
-    -1))
+      (if (string-prefix? str sub)
+          0
+          (+ 1 (string-find (cdr str) sub)))
+      -1))
 
 (define (string-find-first str char)
   (if (string-contains? str char)
-    (if (eqv? (car str) char)
-      0
-      (+ 1 (string-find-first (cdr str) char)))
-    -1))
+      (if (eqv? (car str) char)
+          0
+          (+ 1 (string-find-first (cdr str) char)))
+      -1))
 
 (define (string-find-last str char)
   ((lambda (rev)
-    (if (= rev -1)
-      -1
-      (- (length str) 1 rev)))
-    (string-find-first (string-reverse str) char)))
+     (if (= rev -1)
+         -1
+         (- (length str) 1 rev)))
+   (string-find-first (string-reverse str) char)))
 
 (define (string-at str at)
   (if (= at 0)
-    (car str)
-    (string-at (cdr str) (- at 1))))
+      (car str)
+      (string-at (cdr str) (- at 1))))
 
 (define (string-at-put str at char)
   (if (= at 0)
-    (cons char (cdr str))
-    (cons
-      (car str)
-      (string-at-put (cdr str) (- at 1) char))))
+      (cons char (cdr str))
+      (cons
+        (car str)
+        (string-at-put (cdr str) (- at 1) char))))
 
 (define (string-replace str from to)
   (if (null? str)
-    ""
-    (if (eqv? (car str) from)
-      (cons to (string-replace (cdr str) from to))
-      (cons (car str) (string-replace (cdr str) from to)))))
+      ""
+      (if (eqv? (car str) from)
+          (cons to (string-replace (cdr str) from to))
+          (cons (car str) (string-replace (cdr str) from to)))))
 
 (define (string-sub-replace str from to)
   (if (null? str)
-    ""
-    (if (string-prefix? str from)
-      (concat
-        to
-        (string-sub-replace (drop (length from) str) from to))
-      (cons
-        (car str)
-        (string-sub-replace (cdr str) from to)))))
+      ""
+      (if (string-prefix? str from)
+          (concat
+            to
+            (string-sub-replace (drop (length from) str) from to))
+          (cons
+            (car str)
+            (string-sub-replace (cdr str) from to)))))
 
 (require "class.ys")
 
-(def-class String (@str)
-  (attr-reader 'string @str)
-  (attr-writer '= @str)
-  ('reverse . (lambda () (@class (@str $ string-reverse))))
-  ('contains? . (lambda (c) (@str $ string-contains? c)))
-  ('sub? . (lambda (str) (@str $ string-sub? str)))
-  ('prefix? . (lambda (str) (@str $ string-prefix? str)))
-  ('suffix? . (lambda (str) (@str $ string-suffix? str)))
-  ('find . (lambda (str) (@str $ string-find str)))
-  ('find-first . (lambda (c) (@str $ string-find-first c)))
-  ('find-last . (lambda (c) (@str $ string-find-last c)))
-  ('at . (lambda (n) (@str $ string-at n)))
-  ('at-put . (lambda (n c) (@str $ string-at-put n c)))
-  ('replace . (lambda (from to) (@class (@str $ string-replace from to))))
-  ('sub-replace . (lambda (from to) (@class (@str $ string-sub-replace from to)))))
+(defclass String (@str)
+          (attr-reader 'string @str)
+          (attr-writer '= @str)
+          ('reverse . (lambda () (@class (@str $ string-reverse))))
+          ('contains? . (lambda (c) (@str $ string-contains? c)))
+          ('sub? . (lambda (str) (@str $ string-sub? str)))
+          ('prefix? . (lambda (str) (@str $ string-prefix? str)))
+          ('suffix? . (lambda (str) (@str $ string-suffix? str)))
+          ('find . (lambda (str) (@str $ string-find str)))
+          ('find-first . (lambda (c) (@str $ string-find-first c)))
+          ('find-last . (lambda (c) (@str $ string-find-last c)))
+          ('at . (lambda (n) (@str $ string-at n)))
+          ('at-put . (lambda (n c) (@str $ string-at-put n c)))
+          ('replace . (lambda (from to) (@class (@str $ string-replace from to))))
+          ('sub-replace . (lambda (from to) (@class (@str $ string-sub-replace from to)))))

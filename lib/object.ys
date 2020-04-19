@@ -2,10 +2,10 @@
 
 (define (member? elem li)
   (if (null? li)
-    false
-    (if (eqv? elem (caar li))
-      true
-      (member? elem (cdr li)))))
+      false
+      (if (eqv? elem (caar li))
+          true
+          (member? elem (cdr li)))))
 
 (define (cadar li) (car (cdr (car li))))
 (define (cdar li) (cdr (car li)))
@@ -13,12 +13,12 @@
 
 (define (lookup sym li)
   (if (null? li)
-    '()
-    (if (eqv? sym (caar li))
-      (if (dotted-list? (car li))
-        (cdar li)
-        (cadar li))
-      (lookup sym (cdr li)))))
+      '()
+      (if (eqv? sym (caar li))
+          (if (dotted-list? (car li))
+              (cdar li)
+              (cadar li))
+          (lookup sym (cdr li)))))
 
 (define (attr-reader name attr)
   (name . (lambda () (attr get))))
@@ -26,15 +26,14 @@
 (define (attr-writer name attr)
   (name . (lambda (val) (attr set val))))
 
-(define ($$object-escape-symbols args)
-  (if (null? args)
-    '()
-    (if (symbol? (car args))
-      (cons (list 'quote (car args)) ($$object-escape-symbols (cdr args)))
-      (cons (car args) ($$object-escape-symbols (cdr args))))))
-
 (define (object . methods)
+  (define (object-escape-symbols args)
+    (if (null? args)
+        '()
+        (if (symbol? (car args))
+            (cons (list 'quote (car args)) (object-escape-symbols (cdr args)))
+            (cons (car args) (object-escape-symbols (cdr args))))))
   (lambda ('method . args)
     (if (member? method methods)
-      (apply (lookup method methods) ($$object-escape-symbols args))
-      '())))
+        (apply (lookup method methods) (object-escape-symbols args))
+        '())))

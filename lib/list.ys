@@ -1,7 +1,7 @@
 (define (null? li)
   (if (string? li)
-    (eqv? li "")
-    (eqv? li nil)))
+      (eqv? li "")
+      (eqv? li nil)))
 
 (define (flip f)
   (lambda (arg1 arg2)
@@ -9,13 +9,13 @@
 
 (define (foldl f acc li)
   (if (null? li)
-    acc
-    (foldl f (f acc (car li)) (cdr li))))
+      acc
+      (foldl f (f acc (car li)) (cdr li))))
 
 (define (foldr f end li)
   (if (null? li)
-    end
-    (f (car li) (foldr f end (cdr li)))))
+      end
+      (f (car li) (foldr f end (cdr li)))))
 
 (define fold foldl)
 (define reduce fold)
@@ -33,8 +33,8 @@
   (foldr
     (lambda (x y)
       (if (pred x)
-        (cons x y)
-        y))
+          (cons x y)
+          y))
     '()
     li))
 
@@ -54,8 +54,8 @@
 
 (define (null? li)
   (if (string? li)
-    (eqv? li "")
-    (eqv? li '())))
+      (eqv? li "")
+      (eqv? li '())))
 
 (define (length li)
   (fold
@@ -73,21 +73,21 @@
 
 (define (list=? s1 s2)
   (if (and (null? s1) (null? s2))
-    true
-    (if (/= (length s1) (length s2))
-      false
-      (if (eqv? (car s1) (car s2))
-        (list=? (cdr s1) (cdr s2))
-        false))))
+      true
+      (if (/= (length s1) (length s2))
+          false
+          (if (eqv? (car s1) (car s2))
+              (list=? (cdr s1) (cdr s2))
+              false))))
 
 (define (take n li)
   (if (or (null? li) (= n 0)))
-    '()
-    (cons (car li) (take (- n 1) (cdr li))))
+  '()
+  (cons (car li) (take (- n 1) (cdr li))))
 
 (define (drop n li)
   (if (null? li)
-    '()
-    (if (= n 0)
-      li
-      (drop (- n 1) (cdr li)))))
+      '()
+      (if (= n 0)
+          li
+          (drop (- n 1) (cdr li)))))
