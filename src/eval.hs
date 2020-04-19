@@ -128,12 +128,13 @@ requireFile relative dir file = do
   setCurrentFile (String file)
   setRelativeCurrentDir relative dir'
   cdir <- getCurrentDir
-  res <- (Interp $ \e -> (,) e <$> fileStatements cdir) >>= ($!) (fmap last . mapM eval)
+  res <- (Interp $ \e -> (,) e <$> fileStatements cdir) >>= ($!) evalAll
   setCurrentFile file'
   setCurrentDir dir'
   return res
   where
     dirstr (String s) = s
+    evalAll = foldM (\_ val -> eval val) (List [])
     fileStatements cdir = require (dirstr cdir) file
 
     -- If the command is require-relative, the current directory variable is
