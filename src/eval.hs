@@ -30,6 +30,12 @@ eval (List [Atom "define", Atom var, form]) = do
   defineNewVar var val
   return val
 eval (List [Atom "quote", val]) = return val
+eval (List [Atom "eval", val]) = eval val >>= eval
+eval (List (Atom "apply":f:args)) = do
+  func <- eval f
+  argVals <- reverse <$> foldM (\argList val -> flip (:) argList <$> eval val) [] args
+  env <- environment
+  applyProc env eval (func:argVals)
 eval (List (Atom "define":List (Atom var:params):body)) = do
   env <- environment
   defineRecursiveSymbol makeNormalFunc var env params body

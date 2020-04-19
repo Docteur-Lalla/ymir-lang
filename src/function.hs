@@ -1,14 +1,15 @@
 module Function
-  (makeArgument,
-  makeFunc,
-  makeNormalFunc,
-  makeVarargs,
-  makeMacro,
-  makeNormalMacro,
-  makeVarargsMacro,
+  (apply,
   applyFunction,
-  apply,
+  applyProc,
   differentLengths,
+  makeArgument,
+  makeFunc,
+  makeMacro,
+  makeNormalFunc,
+  makeNormalMacro,
+  makeVarargs,
+  makeVarargsMacro,
   remainingArguments) where
 
 import Control.Monad.Except
