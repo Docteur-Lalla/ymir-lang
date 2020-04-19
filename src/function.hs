@@ -12,6 +12,7 @@ module Function
   remainingArguments) where
 
 import Control.Monad.Except
+import Data.IORef
 import Data.Maybe (isNothing, maybeToList)
 import Environment
 import Error
@@ -30,8 +31,9 @@ makeArgument env value = ("", False)
 -- |Create a function from the given variadic parameter name, environment,
 -- |symbol list and body.
 makeFunc :: Maybe Parameter -> Env -> [YmirValue] -> [YmirValue] -> YmirValue
-makeFunc varargs env params body = Closure pnames varargs body env
+makeFunc varargs env params body = Closure pnames varargs body envRef
   where pnames = map (makeArgument env) params
+        envRef = unsafePerformIO $ newIORef env
 
 makeNormalFunc = makeFunc Nothing
 makeVarargs varargs env = makeFunc (Just $ makeArgument env varargs) env
@@ -55,8 +57,9 @@ applyProc env eval (f:args) = apply env eval f args
 -- |Apply the given function to the given arguments.
 applyFunction :: EvalFunction -> YmirValue -> [YmirValue] -> Interp Env YmirValue
 applyFunction _ (Primitive f) args = Interp $ \e -> liftThrows $ fmap ((,) e) (f args)
-applyFunction eval (Closure paramPairs varargPair body env) args =
+applyFunction eval (Closure paramPairs varargPair body envRef) args =
   withRightParameterCount paramPairs args varargPair $ do
+    env <- Interp $ \e -> (,) e <$> lift (readIORef envRef)
     let env2 = bindVars env $ bindParameters paramPairs args
     env3 <- Interp $ \_ -> do
       e <- liftThrows env2 >>= bindVarArgs (remainingArguments paramPairs args) (varargName varargPair)

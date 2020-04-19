@@ -83,7 +83,7 @@ data YmirValue = Atom String
     params :: [Parameter],
     vararg :: Maybe Parameter,
     body :: [YmirValue],
-    closure :: Env
+    closure :: IORef Env
   }
   | Macro
   {

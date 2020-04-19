@@ -1,5 +1,6 @@
 module Eval where
 import Control.Monad.Except
+import Data.IORef
 import Data.Maybe (isNothing, maybeToList)
 import Environment
 import Function
@@ -7,6 +8,12 @@ import Interpreter
 import Primitives
 import System.FilePath
 import Value
+
+defineRecursiveSymbol f var env params body = do
+  let function = f env params body
+  Interp $ \e -> (,) e <$> lift (modifyIORef (closure function) ((:) (var, function)))
+  defineNewVar var function
+  return function
 
 eval :: YmirValue -> Interp Env YmirValue
 eval val@(String _) = return val
@@ -25,20 +32,16 @@ eval (List [Atom "define", Atom var, form]) = do
 eval (List [Atom "quote", val]) = return val
 eval (List (Atom "define":List (Atom var:params):body)) = do
   env <- environment
-  let function = makeNormalFunc env params body
-  defineNewVar var function
-  return function
+  defineRecursiveSymbol makeNormalFunc var env params body
 eval (List (Atom "define":DottedList (Atom var:params) varargs:body)) = do
   env <- environment
-  let function = makeVarargs varargs env params body
-  defineNewVar var function
-  return function
-eval (List (Atom "def-macro":List (Atom var:params):body)) = do
+  defineRecursiveSymbol (makeVarargs varargs) var env params body
+eval (List (Atom "defmacro":List (Atom var:params):body)) = do
   env <- environment
   let macro = makeNormalMacro env params body
   defineNewVar var macro
   return macro
-eval (List (Atom "def-macro":DottedList (Atom var:params) varargs:body)) = do
+eval (List (Atom "defmacro":DottedList (Atom var:params) varargs:body)) = do
   env <- environment
   let macro = makeVarargsMacro varargs env params body
   defineNewVar var macro
